@@ -47,6 +47,25 @@ Hentikan server dengan `Ctrl + C`.
 python -m pytest tests/ -v
 ```
 
+## Mensimulasikan tanpa browser
+
+Untuk kebutuhan laporan, eksperimen bisa dijalankan langsung dari terminal:
+
+```bash
+python simulate.py --synthetic --count 200 --seed 42
+```
+
+| Argumen | Fungsi |
+| --- | --- |
+| `--synthetic` | Pakai dataset 150 pelanggan, bukan dataset aktif |
+| `--count N` | Jumlah decoy per metode (default 100) |
+| `--seed N` | Seed agar hasil dapat direproduksi |
+| `--method random` / `--method adaptive` | Tampilkan hanya satu metode |
+| `--show-decoy` | Tampilkan contoh baris data umpan |
+
+Keluarannya berupa tabel metrik yang bisa langsung disalin ke laporan.
+Seed yang sama dengan data yang sama selalu menghasilkan angka yang sama.
+
 ## Membuat dataset sintetis besar
 
 ```bash

@@ -79,8 +79,8 @@
     </tr>
     <tr>
       <td>Waktu pembentukan</td>
-      <td>{{ "{:.4f}".format(report.random.time_seconds) }} detik</td>
-      <td>{{ "{:.4f}".format(report.adaptive.time_seconds) }} detik</td>
+      <td>{{ "{:.3f}".format(report.random.time_seconds * 1000) }} ms</td>
+      <td>{{ "{:.3f}".format(report.adaptive.time_seconds * 1000) }} ms</td>
       <td>&mdash;</td>
     </tr>
   </table>

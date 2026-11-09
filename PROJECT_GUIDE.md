@@ -165,7 +165,23 @@ Hentikan server dengan `Ctrl + C`.
 python -m pytest tests/ -v
 ```
 
-### F. Pengaturan opsional
+### F. Jalankan simulasi dari terminal
+
+Untuk mengisi laporan tanpa membuka browser:
+
+``` bash
+python simulate.py --synthetic --count 200 --seed 42
+```
+
+| Argumen | Fungsi |
+| --- | --- |
+| `--synthetic` | Pakai dataset 150 pelanggan |
+| `--count N` | Jumlah decoy per metode |
+| `--seed N` | Seed agar hasil dapat direproduksi |
+| `--method random` / `--method adaptive` | Satu metode saja |
+| `--show-decoy` | Tampilkan contoh baris data umpan |
+
+### G. Pengaturan opsional
 
 | Variabel | Default | Fungsi |
 | --- | --- | --- |
@@ -191,6 +207,7 @@ masuk.
 HoneyVault/
 ├── app.py                     # titik masuk, memanggil create_app()
 ├── config.py                  # konfigurasi terpusat
+├── simulate.py                # CLI untuk eksperimen dari terminal
 ├── requirements.txt
 ├── README.md
 ├── PROJECT_GUIDE.md
