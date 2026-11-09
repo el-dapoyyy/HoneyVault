@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HoneyVault</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <b>&#128737; HoneyVault <small>Adaptive Customer Data Protection</small></b>
+    <nav>
+      <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
+      <a href="{{ url_for('simulation.simulation') }}">Simulasi Metode</a>
+      <a href="{{ url_for('evaluation.evaluation') }}">Evaluasi</a>
+    </nav>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <p class="flash {{ category }}">{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    Prototype akademik &bull; Gunakan dataset sintetis saja &bull;
+    Belum menerapkan DTE / Honey Encryption
+  </footer>
+</body>
+</html>

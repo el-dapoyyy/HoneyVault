@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Simulasi Adaptive Decoy</h1>
+<p class="lead">
+  Profil saldo dihitung dari dataset pelanggan saat ini. Kedua generator
+  memakai rentang nilai (message space) yang sama agar perbandingannya adil.
+</p>
+
+<section>
+  <h2>Profil dataset</h2>
+  <div class="stats">
+    <div>Jumlah<strong>{{ stats.overall.count }}</strong></div>
+    <div>Mean<strong>Rp {{ "{:,.0f}".format(stats.overall.mean) }}</strong></div>
+    <div>Std. deviasi<strong>Rp {{ "{:,.0f}".format(stats.overall.sd) }}</strong></div>
+    <div>Median<strong>Rp {{ "{:,.0f}".format(stats.overall.median) }}</strong></div>
+    <div>Rentang<strong>Rp {{ "{:,.0f}".format(stats.overall.min) }} &ndash; {{ "{:,.0f}".format(stats.overall.max) }}</strong></div>
+    <div>Kuartil 1 &ndash; 3<strong>Rp {{ "{:,.0f}".format(stats.overall.q1) }} &ndash; {{ "{:,.0f}".format(stats.overall.q3) }}</strong></div>
+  </div>
+</section>
+
+<section>
+  <h2>Jalankan generator</h2>
+  <form method="post">
+    <label>Metode
+      <select name="method">
+        <option value="adaptive" {% if method == 'adaptive' %}selected{% endif %}>Adaptive Decoy</option>
+        <option value="random" {% if method == 'random' %}selected{% endif %}>Random Decoy (baseline)</option>
+      </select>
+    </label>
+    <label>Jumlah decoy
+      <input type="number" name="count" min="1" max="{{ max_count }}" value="{{ count }}" required>
+    </label>
+    <label>Seed (opsional)
+      <input type="number" name="seed" value="{{ seed }}" placeholder="mis. 42" autocomplete="off">
+    </label>
+    <button type="submit">Generate data umpan</button>
+  </form>
+  <p class="note">
+    Seed yang sama dengan data yang sama menghasilkan decoy yang identik.
+    Kosongkan seed untuk hasil acak pada setiap menjalankan.
+  </p>
+</section>
+
+{% if result %}
+<section>
+  <h2>Hasil: {{ method }}</h2>
+  <div class="table-scroll">
+    <table>
+      <tr><th>ID</th><th>Nama sintetis</th><th>Kategori</th><th>Saldo umpan</th></tr>
+      {% for r in result %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.name }}</td>
+        <td>{{ r.category }}</td>
+        <td>Rp {{ "{:,.0f}".format(r.balance) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <p class="note">
+    {% if method == 'adaptive' %}
+      Saldo dibangkitkan dari model Gaussian per kategori sehingga korelasi
+      kategori&ndash;saldo ikut dipertahankan, lalu dibatasi pada rentang
+      data asli.
+    {% else %}
+      Saldo diambil seragam pada rentang yang sama sebagai baseline pembanding.
+    {% endif %}
+    Nama dan ID pada data umpan selalu sintetis dan tidak menyalin identitas
+    pelanggan asli.
+  </p>
+</section>
+{% endif %}
+
+<p class="warning">
+  <b>Batasan:</b> ini hanya prototipe pembentukan decoy. Belum menerapkan
+  DTE/Honey Encryption, enkripsi, autentikasi, atau perlindungan produksi.
+  Jangan gunakan data pelanggan nyata.
+</p>
+{% endblock %}

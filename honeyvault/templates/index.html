@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard pelanggan</h1>
+<p class="lead">
+  Kelola dataset sintetis untuk eksperimen Adaptive Decoy. Semua data pada
+  aplikasi ini adalah data fiktif.
+</p>
+
+<div class="stats">
+  <div>Total pelanggan<strong>{{ stats.overall.count }}</strong></div>
+  <div>Rata-rata saldo<strong>Rp {{ "{:,.0f}".format(stats.overall.mean) }}</strong></div>
+  <div>Median saldo<strong>Rp {{ "{:,.0f}".format(stats.overall.median) }}</strong></div>
+  <div>Std. deviasi<strong>Rp {{ "{:,.0f}".format(stats.overall.sd) }}</strong></div>
+  <div>Saldo minimum<strong>Rp {{ "{:,.0f}".format(stats.overall.min) }}</strong></div>
+  <div>Saldo maksimum<strong>Rp {{ "{:,.0f}".format(stats.overall.max) }}</strong></div>
+</div>
+
+<div class="grid">
+  <section>
+    <h2>Tambah pelanggan</h2>
+    <form method="post" action="{{ url_for('dashboard.add_customer') }}">
+      <label>Nama<input name="name" required maxlength="80" autocomplete="off"></label>
+      <label>Kategori
+        <select name="category">
+          {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Saldo<input name="balance" type="number" min="0" step="1000" required></label>
+      <button type="submit">Tambah data</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Eksperimen</h2>
+    <p>
+      Bandingkan generator umpan acak dengan generator adaptif yang memakai
+      profil statistik saldo.
+    </p>
+    <a class="btn" href="{{ url_for('simulation.simulation') }}">Buka simulasi &rarr;</a>
+    <a class="btn secondary" href="{{ url_for('evaluation.evaluation') }}">Buka evaluasi kuantitatif &rarr;</a>
+    <form method="post" action="{{ url_for('dashboard.load_synthetic') }}">
+      <button type="submit" class="light">Muat dataset sintetis besar (150 pelanggan)</button>
+    </form>
+    <form method="post" action="{{ url_for('dashboard.reset_dataset') }}">
+      <button type="submit" class="light danger">Reset dataset contoh (8 pelanggan)</button>
+    </form>
+  </section>
+</div>
+
+<section>
+  <h2>Profil per kategori</h2>
+  {% if stats.categories %}
+  <table>
+    <tr><th>Kategori</th><th>Jumlah</th><th>Mean</th><th>Std. deviasi</th><th>Minimum</th><th>Maksimum</th></tr>
+    {% for c in stats.categories %}
+    <tr>
+      <td>{{ c }}</td>
+      <td>{{ stats.count_by_category[c] }}</td>
+      <td>Rp {{ "{:,.0f}".format(stats.by_category[c].mean) }}</td>
+      <td>Rp {{ "{:,.0f}".format(stats.by_category[c].sd) }}</td>
+      <td>Rp {{ "{:,.0f}".format(stats.by_category[c].min) }}</td>
+      <td>Rp {{ "{:,.0f}".format(stats.by_category[c].max) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="note">Belum ada pelanggan. Tambahkan data terlebih dahulu.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Daftar pelanggan ({{ rows|length }})</h2>
+  <div class="table-scroll">
+    <table>
+      <tr><th>ID</th><th>Nama</th><th>Kategori</th><th>Saldo</th></tr>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.name }}</td>
+        <td>{{ r.category }}</td>
+        <td>Rp {{ "{:,.0f}".format(r.balance) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</section>
+{% endblock %}

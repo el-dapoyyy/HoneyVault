@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Evaluasi kuantitatif</h1>
+<p class="lead">
+  Bandingkan Random Decoy dan Adaptive Decoy terhadap data asli dengan
+  metrik statistik dan uji kemampuan membedakan data asli dari data umpan.
+</p>
+
+<section>
+  <h2>Konfigurasi eksperimen</h2>
+  <form method="post">
+    <label>Jumlah decoy
+      <input type="number" name="count" min="1" max="200" value="{{ count }}" required>
+    </label>
+    <label>Seed (opsional)
+      <input type="number" name="seed" value="{{ seed }}" placeholder="mis. 42" autocomplete="off">
+    </label>
+    <button type="submit">Jalankan perbandingan</button>
+  </form>
+</section>
+
+{% if report %}
+<section>
+  <h2>Ringkasan metrik</h2>
+  <table>
+    <tr>
+      <th>Metrik</th>
+      <th>Random Decoy</th>
+      <th>Adaptive Decoy</th>
+      <th>Lebih dekat ke asli</th>
+    </tr>
+    <tr>
+      <td>Selisih mean saldo</td>
+      <td>Rp {{ "{:,.0f}".format(report.random.mean_difference) }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.adaptive.mean_difference) }}</td>
+      <td>
+        {% if report.random.mean_difference < report.adaptive.mean_difference %}Random{% elif report.adaptive.mean_difference < report.random.mean_difference %}Adaptive{% else %}Seri{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Selisih std. deviasi</td>
+      <td>Rp {{ "{:,.0f}".format(report.random.sd_difference) }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.adaptive.sd_difference) }}</td>
+      <td>
+        {% if report.random.sd_difference < report.adaptive.sd_difference %}Random{% elif report.adaptive.sd_difference < report.random.sd_difference %}Adaptive{% else %}Seri{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Overlap histogram (1 = identik)</td>
+      <td>{{ "{:.3f}".format(report.random.histogram_overlap) }}</td>
+      <td>{{ "{:.3f}".format(report.adaptive.histogram_overlap) }}</td>
+      <td>
+        {% if report.random.histogram_overlap > report.adaptive.histogram_overlap %}Random{% elif report.adaptive.histogram_overlap > report.random.histogram_overlap %}Adaptive{% else %}Seri{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Wasserstein distance (kecil = dekat)</td>
+      <td>{{ "{:,.0f}".format(report.random.wasserstein_distance) }}</td>
+      <td>{{ "{:,.0f}".format(report.adaptive.wasserstein_distance) }}</td>
+      <td>
+        {% if report.random.wasserstein_distance < report.adaptive.wasserstein_distance %}Random{% elif report.adaptive.wasserstein_distance < report.random.wasserstein_distance %}Adaptive{% else %}Seri{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Statistik KS (0..1)</td>
+      <td>{{ "{:.4f}".format(report.random.ks_statistic) }}</td>
+      <td>{{ "{:.4f}".format(report.adaptive.ks_statistic) }}</td>
+      <td>
+        {% if report.random.ks_statistic < report.adaptive.ks_statistic %}Random{% elif report.adaptive.ks_statistic < report.random.ks_statistic %}Adaptive{% else %}Seri{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Akurasi classifier (data uji)</td>
+      <td>{{ "{:.3f}".format(report.random.classifier.test_accuracy) }}</td>
+      <td>{{ "{:.3f}".format(report.adaptive.classifier.test_accuracy) }}</td>
+      <td>
+        {% if report.random.classifier.test_accuracy < report.adaptive.classifier.test_accuracy %}Random{% elif report.adaptive.classifier.test_accuracy < report.random.classifier.test_accuracy %}Adaptive{% else %}Seri{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>Waktu pembentukan</td>
+      <td>{{ "{:.4f}".format(report.random.time_seconds) }} detik</td>
+      <td>{{ "{:.4f}".format(report.adaptive.time_seconds) }} detik</td>
+      <td>&mdash;</td>
+    </tr>
+  </table>
+
+  <p class="note">
+    <b>Metode terdekat pada jarak Wasserstein:
+    {{ 'Adaptive Decoy' if report.winner == 'adaptive' else ('Random Decoy' if report.winner == 'random' else report.winner) }}.</b>
+    Seed: {{ report.seed if report.seed is not none else 'acak' }} &bull;
+    Jumlah decoy per metode: {{ report.count }} &bull;
+    Data latih classifier: {{ report.random.classifier.train_size }} &bull;
+    Data uji: {{ report.random.classifier.test_size }}.
+  </p>
+</section>
+
+<section>
+  <h2>Statistik saldo</h2>
+  <table>
+    <tr><th>Kelompok</th><th>Jumlah</th><th>Mean</th><th>Std. deviasi</th></tr>
+    <tr>
+      <td>Data asli</td>
+      <td>{{ report.random.real_count }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.random.real_mean) }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.random.real_sd) }}</td>
+    </tr>
+    <tr>
+      <td>Random Decoy</td>
+      <td>{{ report.random.decoy_count }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.random.decoy_mean) }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.random.decoy_sd) }}</td>
+    </tr>
+    <tr>
+      <td>Adaptive Decoy</td>
+      <td>{{ report.adaptive.decoy_count }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.adaptive.decoy_mean) }}</td>
+      <td>Rp {{ "{:,.0f}".format(report.adaptive.decoy_sd) }}</td>
+    </tr>
+  </table>
+</section>
+
+<div class="grid">
+  <section>
+    <h2>Contoh Random Decoy</h2>
+    <div class="table-scroll">
+      <table>
+        <tr><th>ID</th><th>Nama sintetis</th><th>Kategori</th><th>Saldo</th></tr>
+        {% for r in report.random_sample %}
+        <tr><td>{{ r.id }}</td><td>{{ r.name }}</td><td>{{ r.category }}</td><td>Rp {{ "{:,.0f}".format(r.balance) }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+  <section>
+    <h2>Contoh Adaptive Decoy</h2>
+    <div class="table-scroll">
+      <table>
+        <tr><th>ID</th><th>Nama sintetis</th><th>Kategori</th><th>Saldo</th></tr>
+        {% for r in report.adaptive_sample %}
+        <tr><td>{{ r.id }}</td><td>{{ r.name }}</td><td>{{ r.category }}</td><td>Rp {{ "{:,.0f}".format(r.balance) }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+</div>
+
+<p class="warning">
+  <b>Catatan interpretasi:</b> jarak distribusi yang lebih kecil berarti
+  distribusi lebih dekat, tetapi <b>tidak</b> otomatis membuktikan keamanan
+  kriptografi. Aplikasi ini belum mengandung DTE maupun mekanisme
+  Honey Encryption.
+</p>
+{% endif %}
+{% endblock %}

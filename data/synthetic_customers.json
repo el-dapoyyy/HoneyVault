@@ -1,0 +1,902 @@
+[
+  {
+    "id": "C001",
+    "name": "Dewi Effendi",
+    "category": "Premium",
+    "balance": 8000000
+  },
+  {
+    "id": "C002",
+    "name": "Bambang Pranoto",
+    "category": "Regular",
+    "balance": 8778000
+  },
+  {
+    "id": "C003",
+    "name": "Hana Damar",
+    "category": "Basic",
+    "balance": 2695000
+  },
+  {
+    "id": "C004",
+    "name": "Tono Cahyani",
+    "category": "Premium",
+    "balance": 8000000
+  },
+  {
+    "id": "C005",
+    "name": "Citra Cahyani",
+    "category": "Regular",
+    "balance": 8486000
+  },
+  {
+    "id": "C006",
+    "name": "Joko Maulana",
+    "category": "Basic",
+    "balance": 2187000
+  },
+  {
+    "id": "C007",
+    "name": "Candra Damar",
+    "category": "Premium",
+    "balance": 15249000
+  },
+  {
+    "id": "C008",
+    "name": "Indah Fitriani",
+    "category": "VIP",
+    "balance": 46445000
+  },
+  {
+    "id": "C009",
+    "name": "Umar Utami",
+    "category": "Regular",
+    "balance": 8139000
+  },
+  {
+    "id": "C010",
+    "name": "Bayu Asmara",
+    "category": "VIP",
+    "balance": 68590000
+  },
+  {
+    "id": "C011",
+    "name": "Bambang Zulkifli",
+    "category": "Basic",
+    "balance": 3596000
+  },
+  {
+    "id": "C012",
+    "name": "Bambang Yulianto",
+    "category": "VIP",
+    "balance": 33363000
+  },
+  {
+    "id": "C013",
+    "name": "Putri Nugroho",
+    "category": "Regular",
+    "balance": 10309000
+  },
+  {
+    "id": "C014",
+    "name": "Gita Yulianto",
+    "category": "Basic",
+    "balance": 3868000
+  },
+  {
+    "id": "C015",
+    "name": "Bayu Fitriani",
+    "category": "Regular",
+    "balance": 10514000
+  },
+  {
+    "id": "C016",
+    "name": "Agus Effendi",
+    "category": "Premium",
+    "balance": 13945000
+  },
+  {
+    "id": "C017",
+    "name": "Wahyu Yulianto",
+    "category": "Basic",
+    "balance": 4699000
+  },
+  {
+    "id": "C018",
+    "name": "Zaki Fitriani",
+    "category": "Regular",
+    "balance": 9398000
+  },
+  {
+    "id": "C019",
+    "name": "Umar Djalani",
+    "category": "Regular",
+    "balance": 9152000
+  },
+  {
+    "id": "C020",
+    "name": "Candra Damar",
+    "category": "Regular",
+    "balance": 11464000
+  },
+  {
+    "id": "C021",
+    "name": "Dimas Wibowo",
+    "category": "Premium",
+    "balance": 11827000
+  },
+  {
+    "id": "C022",
+    "name": "Bambang Enggal",
+    "category": "Basic",
+    "balance": 2928000
+  },
+  {
+    "id": "C023",
+    "name": "Fajar Jamal",
+    "category": "Regular",
+    "balance": 8039000
+  },
+  {
+    "id": "C024",
+    "name": "Andri Firmansyah",
+    "category": "Regular",
+    "balance": 9958000
+  },
+  {
+    "id": "C025",
+    "name": "Rizky Wibowo",
+    "category": "Regular",
+    "balance": 7856000
+  },
+  {
+    "id": "C026",
+    "name": "Agus Yulianto",
+    "category": "Premium",
+    "balance": 8864000
+  },
+  {
+    "id": "C027",
+    "name": "Oscar Asmara",
+    "category": "Premium",
+    "balance": 15585000
+  },
+  {
+    "id": "C028",
+    "name": "Galang Zulkifli",
+    "category": "VIP",
+    "balance": 33660000
+  },
+  {
+    "id": "C029",
+    "name": "Bambang Suryani",
+    "category": "Regular",
+    "balance": 11443000
+  },
+  {
+    "id": "C030",
+    "name": "Gita Effendi",
+    "category": "Regular",
+    "balance": 11335000
+  },
+  {
+    "id": "C031",
+    "name": "Yuni Ismail",
+    "category": "Premium",
+    "balance": 11538000
+  },
+  {
+    "id": "C032",
+    "name": "Fajar Baskoro",
+    "category": "Basic",
+    "balance": 4142000
+  },
+  {
+    "id": "C033",
+    "name": "Citra Utami",
+    "category": "Regular",
+    "balance": 6196000
+  },
+  {
+    "id": "C034",
+    "name": "Wahyu Nugroho",
+    "category": "Regular",
+    "balance": 6823000
+  },
+  {
+    "id": "C035",
+    "name": "Maya Tjahjadi",
+    "category": "Regular",
+    "balance": 9225000
+  },
+  {
+    "id": "C036",
+    "name": "Dimas Wibowo",
+    "category": "Regular",
+    "balance": 8973000
+  },
+  {
+    "id": "C037",
+    "name": "Bambang Handoko",
+    "category": "Basic",
+    "balance": 1530000
+  },
+  {
+    "id": "C038",
+    "name": "Zaki Tjahjadi",
+    "category": "Premium",
+    "balance": 9133000
+  },
+  {
+    "id": "C039",
+    "name": "Wahyu Zulkifli",
+    "category": "Premium",
+    "balance": 9922000
+  },
+  {
+    "id": "C040",
+    "name": "Rizky Kusuma",
+    "category": "Premium",
+    "balance": 12709000
+  },
+  {
+    "id": "C041",
+    "name": "Tono Handoko",
+    "category": "Regular",
+    "balance": 10000000
+  },
+  {
+    "id": "C042",
+    "name": "Galang Ismail",
+    "category": "Regular",
+    "balance": 8153000
+  },
+  {
+    "id": "C043",
+    "name": "Fajar Zulkifli",
+    "category": "Regular",
+    "balance": 8755000
+  },
+  {
+    "id": "C044",
+    "name": "Dimas Utami",
+    "category": "Regular",
+    "balance": 6577000
+  },
+  {
+    "id": "C045",
+    "name": "Fajar Maulana",
+    "category": "Basic",
+    "balance": 3132000
+  },
+  {
+    "id": "C046",
+    "name": "Maya Lestari",
+    "category": "Premium",
+    "balance": 11784000
+  },
+  {
+    "id": "C047",
+    "name": "Agus Lestari",
+    "category": "Premium",
+    "balance": 12396000
+  },
+  {
+    "id": "C048",
+    "name": "Dimas Enggal",
+    "category": "VIP",
+    "balance": 36301000
+  },
+  {
+    "id": "C049",
+    "name": "Fajar Yulianto",
+    "category": "Regular",
+    "balance": 8738000
+  },
+  {
+    "id": "C050",
+    "name": "Hendra Halim",
+    "category": "Premium",
+    "balance": 19052000
+  },
+  {
+    "id": "C051",
+    "name": "Hana Gunawan",
+    "category": "Regular",
+    "balance": 8546000
+  },
+  {
+    "id": "C052",
+    "name": "Candra Halim",
+    "category": "Basic",
+    "balance": 1717000
+  },
+  {
+    "id": "C053",
+    "name": "Agus Gunawan",
+    "category": "Regular",
+    "balance": 8214000
+  },
+  {
+    "id": "C054",
+    "name": "Joko Firmansyah",
+    "category": "Basic",
+    "balance": 2313000
+  },
+  {
+    "id": "C055",
+    "name": "Lina Baskoro",
+    "category": "Regular",
+    "balance": 11037000
+  },
+  {
+    "id": "C056",
+    "name": "Joko Adi",
+    "category": "Premium",
+    "balance": 20198000
+  },
+  {
+    "id": "C057",
+    "name": "Gita Handoko",
+    "category": "Regular",
+    "balance": 8668000
+  },
+  {
+    "id": "C058",
+    "name": "Bayu Kusuma",
+    "category": "VIP",
+    "balance": 43421000
+  },
+  {
+    "id": "C059",
+    "name": "Bayu Maulana",
+    "category": "Regular",
+    "balance": 8296000
+  },
+  {
+    "id": "C060",
+    "name": "Sari Kusuma",
+    "category": "Regular",
+    "balance": 7900000
+  },
+  {
+    "id": "C061",
+    "name": "Rizky Djalani",
+    "category": "Regular",
+    "balance": 9625000
+  },
+  {
+    "id": "C062",
+    "name": "Galang Enggal",
+    "category": "Regular",
+    "balance": 8141000
+  },
+  {
+    "id": "C063",
+    "name": "Nanda Rizal",
+    "category": "Premium",
+    "balance": 14829000
+  },
+  {
+    "id": "C064",
+    "name": "Joko Cahyono",
+    "category": "Premium",
+    "balance": 12718000
+  },
+  {
+    "id": "C065",
+    "name": "Lina Handoko",
+    "category": "Basic",
+    "balance": 1456000
+  },
+  {
+    "id": "C066",
+    "name": "Eka Djalani",
+    "category": "VIP",
+    "balance": 40625000
+  },
+  {
+    "id": "C067",
+    "name": "Andri Fitriani",
+    "category": "Basic",
+    "balance": 4649000
+  },
+  {
+    "id": "C068",
+    "name": "Candra Asmara",
+    "category": "Premium",
+    "balance": 10562000
+  },
+  {
+    "id": "C069",
+    "name": "Maya Maulana",
+    "category": "Regular",
+    "balance": 8288000
+  },
+  {
+    "id": "C070",
+    "name": "Galang Utami",
+    "category": "Premium",
+    "balance": 19585000
+  },
+  {
+    "id": "C071",
+    "name": "Gita Tjahjadi",
+    "category": "Basic",
+    "balance": 3996000
+  },
+  {
+    "id": "C072",
+    "name": "Rizky Adi",
+    "category": "Basic",
+    "balance": 5028000
+  },
+  {
+    "id": "C073",
+    "name": "Sari Wibowo",
+    "category": "Regular",
+    "balance": 8495000
+  },
+  {
+    "id": "C074",
+    "name": "Fitri Lestari",
+    "category": "Premium",
+    "balance": 21307000
+  },
+  {
+    "id": "C075",
+    "name": "Andri Rizal",
+    "category": "Premium",
+    "balance": 11657000
+  },
+  {
+    "id": "C076",
+    "name": "Indah Djalani",
+    "category": "VIP",
+    "balance": 44642000
+  },
+  {
+    "id": "C077",
+    "name": "Hendra Nugroho",
+    "category": "Basic",
+    "balance": 1310000
+  },
+  {
+    "id": "C078",
+    "name": "Putri Cahyono",
+    "category": "Basic",
+    "balance": 2168000
+  },
+  {
+    "id": "C079",
+    "name": "Gita Cahyono",
+    "category": "Premium",
+    "balance": 9943000
+  },
+  {
+    "id": "C080",
+    "name": "Lina Rizal",
+    "category": "VIP",
+    "balance": 34628000
+  },
+  {
+    "id": "C081",
+    "name": "Candra Ismail",
+    "category": "Premium",
+    "balance": 8204000
+  },
+  {
+    "id": "C082",
+    "name": "Joko Fitriani",
+    "category": "Regular",
+    "balance": 6896000
+  },
+  {
+    "id": "C083",
+    "name": "Candra Gunawan",
+    "category": "Regular",
+    "balance": 7354000
+  },
+  {
+    "id": "C084",
+    "name": "Dimas Effendi",
+    "category": "VIP",
+    "balance": 44469000
+  },
+  {
+    "id": "C085",
+    "name": "Hana Rizal",
+    "category": "Premium",
+    "balance": 15691000
+  },
+  {
+    "id": "C086",
+    "name": "Nanda Jamal",
+    "category": "Premium",
+    "balance": 13640000
+  },
+  {
+    "id": "C087",
+    "name": "Galang Basuki",
+    "category": "Basic",
+    "balance": 5454000
+  },
+  {
+    "id": "C088",
+    "name": "Galang Tjahjadi",
+    "category": "Regular",
+    "balance": 7458000
+  },
+  {
+    "id": "C089",
+    "name": "Bayu Handoko",
+    "category": "Regular",
+    "balance": 8784000
+  },
+  {
+    "id": "C090",
+    "name": "Nanda Jamal",
+    "category": "Regular",
+    "balance": 8302000
+  },
+  {
+    "id": "C091",
+    "name": "Andri Enggal",
+    "category": "Regular",
+    "balance": 5314000
+  },
+  {
+    "id": "C092",
+    "name": "Fajar Cahyani",
+    "category": "Regular",
+    "balance": 8654000
+  },
+  {
+    "id": "C093",
+    "name": "Zaki Asmara",
+    "category": "Basic",
+    "balance": 2484000
+  },
+  {
+    "id": "C094",
+    "name": "Dewi Fitriani",
+    "category": "Basic",
+    "balance": 2679000
+  },
+  {
+    "id": "C095",
+    "name": "Dimas Yulianto",
+    "category": "Regular",
+    "balance": 10571000
+  },
+  {
+    "id": "C096",
+    "name": "Dimas Halim",
+    "category": "Basic",
+    "balance": 3759000
+  },
+  {
+    "id": "C097",
+    "name": "Oscar Enggal",
+    "category": "Regular",
+    "balance": 9929000
+  },
+  {
+    "id": "C098",
+    "name": "Kartika Suryani",
+    "category": "Basic",
+    "balance": 4719000
+  },
+  {
+    "id": "C099",
+    "name": "Zaki Suryani",
+    "category": "Regular",
+    "balance": 7907000
+  },
+  {
+    "id": "C100",
+    "name": "Bayu Handoko",
+    "category": "Premium",
+    "balance": 11569000
+  },
+  {
+    "id": "C101",
+    "name": "Sari Damar",
+    "category": "Premium",
+    "balance": 16923000
+  },
+  {
+    "id": "C102",
+    "name": "Joko Enggal",
+    "category": "Basic",
+    "balance": 4378000
+  },
+  {
+    "id": "C103",
+    "name": "Galang Adi",
+    "category": "Regular",
+    "balance": 6390000
+  },
+  {
+    "id": "C104",
+    "name": "Dimas Lestari",
+    "category": "Basic",
+    "balance": 2568000
+  },
+  {
+    "id": "C105",
+    "name": "Rizky Ismail",
+    "category": "Basic",
+    "balance": 3694000
+  },
+  {
+    "id": "C106",
+    "name": "Andri Baskoro",
+    "category": "Regular",
+    "balance": 8793000
+  },
+  {
+    "id": "C107",
+    "name": "Umar Cahyani",
+    "category": "Basic",
+    "balance": 4120000
+  },
+  {
+    "id": "C108",
+    "name": "Umar Maulana",
+    "category": "Premium",
+    "balance": 16206000
+  },
+  {
+    "id": "C109",
+    "name": "Candra Zulkifli",
+    "category": "Basic",
+    "balance": 4752000
+  },
+  {
+    "id": "C110",
+    "name": "Wahyu Damar",
+    "category": "Regular",
+    "balance": 8757000
+  },
+  {
+    "id": "C111",
+    "name": "Fajar Jamal",
+    "category": "Basic",
+    "balance": 2992000
+  },
+  {
+    "id": "C112",
+    "name": "Hana Jamal",
+    "category": "Regular",
+    "balance": 11016000
+  },
+  {
+    "id": "C113",
+    "name": "Umar Lestari",
+    "category": "Regular",
+    "balance": 11919000
+  },
+  {
+    "id": "C114",
+    "name": "Dewi Lestari",
+    "category": "Basic",
+    "balance": 4546000
+  },
+  {
+    "id": "C115",
+    "name": "Rizky Zulkifli",
+    "category": "Premium",
+    "balance": 20456000
+  },
+  {
+    "id": "C116",
+    "name": "Bayu Gunawan",
+    "category": "Regular",
+    "balance": 8433000
+  },
+  {
+    "id": "C117",
+    "name": "Dewi Yulianto",
+    "category": "Basic",
+    "balance": 3952000
+  },
+  {
+    "id": "C118",
+    "name": "Fitri Fitriani",
+    "category": "Basic",
+    "balance": 3056000
+  },
+  {
+    "id": "C119",
+    "name": "Fajar Kusuma",
+    "category": "Regular",
+    "balance": 7597000
+  },
+  {
+    "id": "C120",
+    "name": "Lina Gunawan",
+    "category": "Regular",
+    "balance": 9790000
+  },
+  {
+    "id": "C121",
+    "name": "Rizky Halim",
+    "category": "Regular",
+    "balance": 9744000
+  },
+  {
+    "id": "C122",
+    "name": "Kartika Nugroho",
+    "category": "Premium",
+    "balance": 23127000
+  },
+  {
+    "id": "C123",
+    "name": "Eka Firmansyah",
+    "category": "Premium",
+    "balance": 12334000
+  },
+  {
+    "id": "C124",
+    "name": "Dewi Enggal",
+    "category": "Regular",
+    "balance": 8355000
+  },
+  {
+    "id": "C125",
+    "name": "Yuni Yulianto",
+    "category": "Basic",
+    "balance": 3292000
+  },
+  {
+    "id": "C126",
+    "name": "Zaki Damar",
+    "category": "Regular",
+    "balance": 6815000
+  },
+  {
+    "id": "C127",
+    "name": "Dimas Adi",
+    "category": "Premium",
+    "balance": 15595000
+  },
+  {
+    "id": "C128",
+    "name": "Andri Handoko",
+    "category": "VIP",
+    "balance": 51564000
+  },
+  {
+    "id": "C129",
+    "name": "Dimas Baskoro",
+    "category": "Regular",
+    "balance": 9731000
+  },
+  {
+    "id": "C130",
+    "name": "Tono Pranoto",
+    "category": "Regular",
+    "balance": 10561000
+  },
+  {
+    "id": "C131",
+    "name": "Fitri Kusuma",
+    "category": "Basic",
+    "balance": 4183000
+  },
+  {
+    "id": "C132",
+    "name": "Galang Tjahjadi",
+    "category": "Basic",
+    "balance": 3127000
+  },
+  {
+    "id": "C133",
+    "name": "Yuni Nugroho",
+    "category": "Premium",
+    "balance": 13340000
+  },
+  {
+    "id": "C134",
+    "name": "Yuni Cahyono",
+    "category": "VIP",
+    "balance": 46341000
+  },
+  {
+    "id": "C135",
+    "name": "Citra Effendi",
+    "category": "VIP",
+    "balance": 42293000
+  },
+  {
+    "id": "C136",
+    "name": "Andri Halim",
+    "category": "Basic",
+    "balance": 1810000
+  },
+  {
+    "id": "C137",
+    "name": "Rizky Asmara",
+    "category": "Basic",
+    "balance": 2842000
+  },
+  {
+    "id": "C138",
+    "name": "Sari Gunawan",
+    "category": "Regular",
+    "balance": 9226000
+  },
+  {
+    "id": "C139",
+    "name": "Putri Lestari",
+    "category": "Regular",
+    "balance": 5161000
+  },
+  {
+    "id": "C140",
+    "name": "Zaki Halim",
+    "category": "VIP",
+    "balance": 27176000
+  },
+  {
+    "id": "C141",
+    "name": "Candra Adi",
+    "category": "Regular",
+    "balance": 9141000
+  },
+  {
+    "id": "C142",
+    "name": "Hana Cahyono",
+    "category": "Basic",
+    "balance": 5101000
+  },
+  {
+    "id": "C143",
+    "name": "Bambang Pranoto",
+    "category": "Regular",
+    "balance": 10440000
+  },
+  {
+    "id": "C144",
+    "name": "Maya Kusuma",
+    "category": "Premium",
+    "balance": 17615000
+  },
+  {
+    "id": "C145",
+    "name": "Tono Kusuma",
+    "category": "Premium",
+    "balance": 8217000
+  },
+  {
+    "id": "C146",
+    "name": "Eka Jamal",
+    "category": "Basic",
+    "balance": 3465000
+  },
+  {
+    "id": "C147",
+    "name": "Fajar Zulkifli",
+    "category": "Regular",
+    "balance": 7409000
+  },
+  {
+    "id": "C148",
+    "name": "Yuni Handoko",
+    "category": "Premium",
+    "balance": 12385000
+  },
+  {
+    "id": "C149",
+    "name": "Zaki Djalani",
+    "category": "Regular",
+    "balance": 8782000
+  },
+  {
+    "id": "C150",
+    "name": "Yuni Firmansyah",
+    "category": "VIP",
+    "balance": 46464000
+  }
+]

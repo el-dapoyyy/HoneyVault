@@ -1,0 +1,34 @@
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fa;color:#172033;font:15px/1.55 Arial,Helvetica,sans-serif}
+header{background:#15213b;color:white;padding:18px max(calc((100% - 1050px)/2),22px);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+header small{display:block;color:#bbc7db;font-size:11px;margin-top:4px}
+nav{display:flex;gap:18px;flex-wrap:wrap}
+nav a{color:white;text-decoration:none;font-size:13px}
+nav a:hover{text-decoration:underline}
+main{max-width:1050px;margin:32px auto;padding:0 20px}
+h1{font-size:30px;margin-bottom:6px}
+h2{font-size:18px;margin-top:0}
+.lead{color:#5a6579;margin-top:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+.stats div,section{background:white;border:1px solid #e4e8ef;border-radius:12px;padding:18px;margin:14px 0}
+.stats strong{display:block;font-size:20px;margin-top:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid section{margin:0}
+label{display:block;margin:12px 0;font-size:13px}
+input,select{display:block;width:100%;padding:10px;margin-top:5px;border:1px solid #ccd3df;border-radius:7px;font:inherit}
+button,.btn{display:inline-block;background:#3158c8;color:white;border:0;border-radius:7px;padding:11px 15px;text-decoration:none;cursor:pointer;font:inherit;font-weight:bold}
+.btn.secondary{background:#5a6579}
+button:hover,.btn:hover{filter:brightness(1.08)}
+.light{background:#e9edf5;color:#344054;margin-top:12px}
+.light.danger{background:#fdecec;color:#a4232a}
+table{width:100%;border-collapse:collapse}
+td,th{text-align:left;padding:11px;border-bottom:1px solid #e8ebf0;font-size:13px}
+th{background:#f7f9fc;font-weight:bold}
+.table-scroll{max-height:420px;overflow:auto;border:1px solid #e8ebf0;border-radius:8px}
+.table-scroll table{margin:0}
+.flash,.note{background:#eaf2ff;padding:12px;border-radius:8px;font-size:13px}
+.flash.success{background:#e8f7ee;color:#14663a}
+.flash.error{background:#fdecec;color:#a4232a}
+.warning{background:#fff5df;padding:14px;border-radius:9px;color:#76551b;font-size:13px}
+footer{text-align:center;color:#8791a2;padding:28px;font-size:12px}
+@media(max-width:700px){.stats{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}header{padding:16px;display:block}nav{margin-top:12px}main{margin:20px auto}h1{font-size:24px}}
