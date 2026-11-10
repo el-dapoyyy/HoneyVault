@@ -138,6 +138,49 @@ def print_decoy_sample(decoys, limit=10):
     print()
 
 
+def print_dte_report(rows, count=300, seed=42):
+    """Menampilkan kualitas data yang dihasilkan DTE."""
+    from honeyvault.crypto.dte_evaluation import (
+        dte_consistency_check, evaluate_dte_quality,
+    )
+
+    quality = evaluate_dte_quality(rows, count=count, seed=seed)
+    consistency = dte_consistency_check(rows)
+
+    print("=" * 68)
+    print("DTE (DISTRIBUTION-TRANSFORMING ENCODER)")
+    print("=" * 68)
+    print("Jumlah pesan          : {}".format(len(quality["distribution"]["space"])))
+    print("Konsistensi decode    : {} seed, {} ketidakkonsistenan".format(
+        consistency["checked"], consistency["mismatches"]))
+    print()
+    print("Kualitas data DTE terhadap data asli:")
+    print("  Wasserstein distance    : {:,.0f}".format(
+        quality["wasserstein_distance"]))
+    print("  Overlap histogram       : {:.3f}".format(
+        quality["histogram_overlap"]))
+    print("  Statistik KS            : {:.4f} (p = {:.4f})".format(
+        quality["ks_statistic"], quality["ks_pvalue"]))
+    print("  Akurasi classifier      : {:.3f} (0.5 = tidak bisa dibedakan)".format(
+        quality["classifier"]["test_accuracy"]))
+    print("  Selisih frekuensi maks  : {:.4f}".format(
+        quality["distribution"]["max_frequency_difference"]))
+    print()
+    print("Frekuensi tiap pesan (data asli vs DTE):")
+    print("  {:<26} {:>7} {:>9} {:>11} {:>11}".format(
+        "Pesan", "Asli", "DTE", "Freq. asli", "Freq. DTE"))
+    print("  " + "-" * 66)
+    for row in quality["distribution"]["comparison"]:
+        print("  {:<26} {:>7} {:>9} {:>11.3f} {:>11.3f}".format(
+            "{} / {}".format(*row["message"]),
+            row["real_count"],
+            row["dte_count"],
+            row["real_frequency"],
+            row["dte_frequency"],
+        ))
+    print()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Menjalankan eksperimen Adaptive Decoy pada HoneyVault.")
@@ -156,6 +199,9 @@ def main(argv=None):
     parser.add_argument(
         "--show-decoy", action="store_true",
         help="Tampilkan contoh baris data umpan.")
+    parser.add_argument(
+        "--dte", action="store_true",
+        help="Tambahkan laporan kualitas DTE.")
     args = parser.parse_args(argv)
 
     if args.synthetic:
@@ -199,6 +245,9 @@ def main(argv=None):
         print_method_table(rows, adaptive_decoys, "ADAPTIVE DECOY")
 
     print_comparison(report)
+
+    if args.dte:
+        print_dte_report(rows, count=max(args.count, 300), seed=args.seed or 42)
 
     if args.show_decoy:
         print_decoy_sample(

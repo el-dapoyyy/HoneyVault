@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Distribution-Transforming Encoder (DTE)</h1>
+<p class="lead">
+  DTE mengubah pesan menjadi <em>seed</em> secara deterministik. Seed acak
+  yang didecode menghasilkan pesan yang mengikuti model distribusi dari data
+  pelanggan. Inilah bagian yang membedakan Honey Encryption dari pemilihan
+  acak biasa.
+</p>
+
+<section>
+  <h2>Sifat utama DTE</h2>
+  <div class="stats">
+    <div>Jumlah pesan<strong>{{ space_description|length }}</strong></div>
+    <div>Ruang seed<strong>{{ space.scale }}</strong></div>
+    <div>Panjang seed<strong>{{ space.seed_bits }} bit</strong></div>
+    <div>Konsistensi decode<strong>{{ "Sehat" if consistency.consistent else "Gagal" }}</strong></div>
+  </div>
+  <p class="note">
+    <b>Syarat 1 &mdash; deterministik:</b> <code>decode(encode(pesan)) == pesan</code>
+    berlaku untuk seluruh pesan yang sah, diuji untuk setiap pesan pada
+    ruang pesan ini.
+  </p>
+  <p class="note">
+    <b>Syarat 2 &mdash; distribusi terjaga:</b> seed yang diambil acak seragam
+    menghasilkan pesan sesuai model probabilitas di bawah ini.
+  </p>
+</section>
+
+<section>
+  <h2>Model distribusi ruang pesan</h2>
+  <p class="note">
+    Setiap pesan adalah pasangan (kategori, tingkat saldo). Bobot pesan
+    berasal dari frekuensi observasi pada dataset pelanggan, sehingga model
+    distribusi benar-benar diturunkan dari data.
+  </p>
+  <div class="table-scroll">
+    <table>
+      <tr><th>Pesan</th><th>Jumlah observasi</th><th>Probabilitas</th><th>Rentang seed</th><th>Jumlah seed</th></tr>
+      {% for row in space_description %}
+      <tr>
+        <td>{{ row.message[0] }} / {{ row.message[1] }}</td>
+        <td>{{ row.weight }}</td>
+        <td>{{ "{:.3f}".format(row.probability) }}</td>
+        <td>{{ row.seed_start }} &ndash; {{ row.seed_end }}</td>
+        <td>{{ "{:,}".format(row.seed_count) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Demo encode dan decode</h2>
+  <form method="post">
+    <label>Skenario
+      <select name="scenario">
+        <option value="correct" {% if scenario == 'correct' %}selected{% endif %}>Kunci benar &mdash; encode pelanggan lalu decode</option>
+        <option value="wrong" {% if scenario == 'wrong' %}selected{% endif %}>Kunci salah &mdash; seed acak lalu decode</option>
+      </select>
+    </label>
+    {% if scenario == 'correct' %}
+    <label>Pelanggan asal
+      <select name="customer_index">
+        {% for r in rows %}
+        <option value="{{ loop.index0 }}">{{ r.id }} &mdash; {{ r.name }} ({{ r.category }}, Rp {{ "{:,.0f}".format(r.balance) }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% endif %}
+    <label>Seed RNG
+      <input type="number" name="seed" value="42">
+    </label>
+    <button type="submit">Jalankan</button>
+  </form>
+
+  {% if result %}
+  <div class="demo-result">
+    {% if result.scenario == 'correct' %}
+    <h3>Kunci benar</h3>
+    <ol class="steps">
+      <li>Pelanggan asli: <b>{{ result.source.name }}</b>
+          ({{ result.source.category }}, Rp {{ "{:,.0f}".format(result.source.balance) }})</li>
+      <li>Pesan profil: <b>{{ result.original_message[0] }} / {{ result.original_message[1] }}</b></li>
+      <li>Encode &rarr; seed: <code>{{ result.dte_seed }}</code></li>
+      <li>Decode &rarr; <b>{{ result.decoded.category }} / {{ result.decoded.tier }}</b>,
+          saldo Rp {{ "{:,.0f}".format(result.decoded.balance) }}</li>
+    </ol>
+    {% if result.original_message == result.decoded['message'] %}
+    <p class="flash success">Pesan kembali sama: decode(encode(pesan)) == pesan.</p>
+    {% else %}
+    <p class="flash error">Pesan tidak kembali sama &mdash; ada bug.</p>
+    {% endif %}
+    {% else %}
+    <h3>Kunci salah</h3>
+    <ol class="steps">
+      <li>Seed acak (tidak ada hubungannya dengan pelanggan mana pun):
+          <code>{{ result.dte_seed }}</code></li>
+      <li>Decode &rarr; <b>{{ result.decoded.category }} / {{ result.decoded.tier }}</b>,
+          saldo Rp {{ "{:,.0f}".format(result.decoded.balance) }}</li>
+    </ol>
+    <p class="flash success">
+      Pesan yang muncul tetap masuk akal dan mengikuti model distribusi data
+      pelanggan. Inilah sifat yang dimaksud Honey Encryption.
+    </p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Contoh data umpan dari DTE</h2>
+  <p class="note">
+    Diambil dengan seed acak, lalu didecode. Bandingkan dengan
+    <a href="{{ url_for('simulation.simulation') }}">hasil generator Adaptive
+    Decoy</a>.
+  </p>
+  <div class="table-scroll">
+    <table>
+      <tr><th>ID</th><th>Kategori</th><th>Tingkat</th><th>Saldo</th><th>Seed</th></tr>
+      {% for r in decoys %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.category }}</td>
+        <td>{{ r.tier if r.tier is defined else r.message[1] }}</td>
+        <td>Rp {{ "{:,.0f}".format(r.balance) }}</td>
+        <td><code>{{ r.dte_seed }}</code></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Seberapa dekat data DTE dengan data asli?</h2>
+  <div class="table-scroll">
+    <table>
+      <tr><th>Metrik</th><th>Nilai</th><th>Arti</th></tr>
+      <tr>
+        <td>Wasserstein distance</td>
+        <td>{{ "{:,.0f}".format(quality.wasserstein_distance) }}</td>
+        <td>Lebih kecil = distribusi lebih dekat</td>
+      </tr>
+      <tr>
+        <td>Overlap histogram</td>
+        <td>{{ "{:.3f}".format(quality.histogram_overlap) }}</td>
+        <td>1.0 = histogram identik</td>
+      </tr>
+      <tr>
+        <td>Statistik KS</td>
+        <td>{{ "{:.4f}".format(quality.ks_statistic) }} (p = {{ "{:.4f}".format(quality.ks_pvalue) }})</td>
+        <td>p besar = tidak bisa dibedakan secara statistik</td>
+      </tr>
+      <tr>
+        <td>Akurasi classifier (data uji)</td>
+        <td>{{ "{:.3f}".format(quality.classifier.test_accuracy) }}</td>
+        <td>0.5 = tidak bisa dibedakan</td>
+      </tr>
+      <tr>
+        <td>Selisih frekuensi pesan maksimum</td>
+        <td>{{ "{:.4f}".format(quality.distribution.max_frequency_difference) }}</td>
+        <td>Kesalahan model distribusi terbesar</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<p class="warning">
+  <b>Batasan:</b> DTE di sini masih berupa komponen message-space dan belum
+  digabungkan dengan skema enkripsi Honey Encryption. Yang ditunjukkan baru
+  sifat DTE: deterministik dan distribusi terjaga. Klaim "aman dari brute
+  force" belum dapat dibuat sebelum Tahap 5 selesai.
+</p>
+{% endblock %}

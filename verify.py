@@ -16,6 +16,7 @@ Keluarannya:
 
 import argparse
 import os
+import random
 import sys
 import traceback
 
@@ -264,6 +265,122 @@ def main(argv=None):
     checker.check("Adaptive Decoy lebih dekat ke data asli",
                   check_adaptive_better)
 
+    # --- 2b. DTE ------------------------------------------------------------
+    checker.section("2B. DTE (DISTRIBUTION-TRANSFORMING ENCODER)")
+
+    from honeyvault.crypto.dte import DTESpace
+    from honeyvault.crypto.honeyvault_space import (
+        build_message_space, decode_profile, encode_profile,
+    )
+    from honeyvault.crypto.dte_evaluation import (
+        dte_consistency_check, evaluate_dte_quality,
+    )
+
+    dte_rows = build_dataset(150)
+
+    def check_dte_roundtrip():
+        """decode(encode(pesan)) == pesan untuk seluruh pesan sah."""
+        space, _ = build_message_space(dte_rows)
+        rng = random.Random(1)
+        failures = 0
+        attempts = 0
+        for message in space.messages:
+            for _ in range(50):
+                seed = space.encode(message, rng=rng)
+                attempts += 1
+                if space.decode(seed) != message:
+                    failures += 1
+        if failures:
+            raise AssertionError(
+                "{} dari {} round-trip gagal".format(failures, attempts))
+        return "{} pesan x 50 percobaan, 0 kegagalan".format(len(space.messages))
+
+    checker.check("DTE round-trip: decode(encode(m)) == m", check_dte_roundtrip)
+
+    def check_dte_distribution():
+        space, _ = build_message_space(dte_rows)
+        rng = random.Random(2)
+        total = 40000
+        counts = {}
+        for _ in range(total):
+            message = space.sample(rng)
+            counts[message] = counts.get(message, 0) + 1
+        worst = 0.0
+        for message in space.messages:
+            expected = space.probability(message)
+            observed = counts.get(message, 0) / total
+            worst = max(worst, abs(expected - observed))
+        if worst > 0.01:
+            raise AssertionError(
+                "Selisih frekuensi maksimum {:.4f} melebihi 0.01".format(worst))
+        return "selisih frekuensi model vs observasi maks {:.4f}".format(worst)
+
+    checker.check("DTE menjaga model distribusi", check_dte_distribution)
+
+    def check_dte_consistency():
+        result = dte_consistency_check(dte_rows, count=50, seed=7)
+        if not result["consistent"]:
+            raise AssertionError(
+                "{} dari {} seed menghasilkan pesan berbeda".format(
+                    result["mismatches"], result["checked"]))
+        return "{} seed, 0 ketidakkonsistenan".format(result["checked"])
+
+    checker.check("DTE konsisten: seed sama -> pesan sama",
+                  check_dte_consistency)
+
+    def check_dte_invalid_seed():
+        space, _ = build_message_space(dte_rows)
+        rejected = 0
+        for bad_seed in (-1, space.scale, space.scale + 1000):
+            try:
+                space.decode(bad_seed)
+            except ValueError:
+                rejected += 1
+        if rejected != 3:
+            raise AssertionError(
+                "Hanya {} dari 3 seed tidak sah yang ditolak".format(rejected))
+        return "seed di luar ruang pesan valid ditolak"
+
+    checker.check("DTE menolak seed di luar ruang pesan valid",
+                  check_dte_invalid_seed)
+
+    def check_dte_indistinguishable():
+        """Data dari DTE harus sulit dibedakan dari data asli."""
+        quality = evaluate_dte_quality(dte_rows, count=300, seed=42)
+        accuracy = quality["classifier"]["test_accuracy"]
+        if accuracy > 0.7:
+            raise AssertionError(
+                "Classifier terlalu akurat ({:.3f}); data DTE mudah "
+                "dibedakan dari data asli".format(accuracy))
+        return ("Wasserstein {:,.0f} | overlap {:.3f} | KS p={:.3f} | "
+                "classifier {:.3f} (mendek 0.5 = tidak bisa dibedakan)".format(
+                    quality["wasserstein_distance"],
+                    quality["histogram_overlap"],
+                    quality["ks_pvalue"],
+                    accuracy))
+
+    checker.check("Data DTE sulit dibedakan dari data asli",
+                  check_dte_indistinguishable)
+
+    def check_dte_probability_matches_data():
+        space, _ = build_message_space(dte_rows)
+        from collections import Counter
+        from honeyvault.crypto.honeyvault_space import balance_tier
+        observed = Counter(
+            (row["category"], balance_tier(float(row["balance"])))
+            for row in dte_rows)
+        total = len(dte_rows)
+        for message, count in observed.items():
+            expected = count / total
+            if abs(space.probability(message) - expected) > 1e-9:
+                raise AssertionError(
+                    "Probabilitas {} tidak cocok frekuensi observasi".format(
+                        message))
+        return "probabilitas setiap pesan sama dengan frekuensi observasi"
+
+    checker.check("Probabilitas DTE diturunkan dari data pelanggan",
+                  check_dte_probability_matches_data)
+
     # --- 3. Aplikasi web -----------------------------------------------------
     checker.section("3. APLIKASI WEB")
 
@@ -399,7 +516,12 @@ def main(argv=None):
     checker.check("Server hanya listen di loopback", check_host_local)
 
     def check_no_honey_claim():
-        """Memastikan proyek tidak mengklaim Honey Encryption sudah ada."""
+        """Memastikan proyek tidak mengklaim Honey Encryption sudah ada.
+
+        Pada Tahap 4 yang ada adalah DTE, bukan skema enkripsi penuh.
+        Keberadaan modul enkripsi (honey_encryption) baru wajar pada
+        Tahap 5.
+        """
         with open("honeyvault/services/decoy.py", encoding="utf-8") as f:
             source = f.read()
         for keyword in ("honey_encryption", "def encrypt(", "def decrypt("):

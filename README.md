@@ -75,6 +75,7 @@ python simulate.py --synthetic --count 200 --seed 42
 | `--seed N` | Seed agar hasil dapat direproduksi |
 | `--method random` / `--method adaptive` | Tampilkan hanya satu metode |
 | `--show-decoy` | Tampilkan contoh baris data umpan |
+| `--dte` | Tambahkan laporan kualitas DTE |
 
 Keluarannya berupa tabel metrik yang bisa langsung disalin ke laporan.
 Seed yang sama dengan data yang sama selalu menghasilkan angka yang sama.
@@ -94,6 +95,8 @@ Atau gunakan tombol "Muat dataset sintetis besar" pada dashboard.
   kuartil, dan rincian per kategori.
 - **Random Decoy** sebagai baseline acak.
 - **Adaptive Decoy** berbasis distribusi Gaussian per kategori.
+- **DTE (Distribution-Transforming Encoder)**: `encode(pesan) -> seed` dan
+  `decode(seed) -> pesan` yang deterministik dan menjaga model distribusi.
 - Identitas decoy sepenuhnya sintetis (`DEC-001` + nama fiktif terpisah).
 - **Evaluasi kuantitatif**: selisih mean dan standar deviasi, overlap
   histogram, Wasserstein distance, statistik Kolmogorov-Smirnov, akurasi
@@ -116,10 +119,13 @@ python app.py
 
 ## Batasan penting
 
-Aplikasi ini **BELUM** mengimplementasikan Honey Encryption sesungguhnya. Belum
-ada DTE (Distribution-Transforming Encoder), enkripsi, autentikasi, atau
-perlindungan data produksi. Ini adalah prototipe untuk menguji satu komponen
-usulan, yaitu generator decoy adaptif.
+Aplikasi ini **BELUM** mengimplementasikan Honey Encryption sesungguhnya.
+Sudah ada Distribution-Transforming Encoder (DTE) dengan sifat deterministik
+dan model distribusi terjaga, **tetapi belum ada** skema enkripsi,
+autentikasi, atau perlindungan data produksi. DTE adalah komponen message
+space; DTE saja belum membuat sistem aman dari brute force.
 
-Gunakan data sintetis saja; jangan masukkan data pelanggan nyata. Server debug
-hanya untuk pengembangan lokal dan mati secara default.
+Ini adalah prototipe untuk menguji komponen usulan, yaitu generator decoy
+adaptif beserta message space-nya. Gunakan data sintetis saja; jangan masukkan
+data pelanggan nyata. Server debug hanya untuk pengembangan lokal dan mati
+secara default.

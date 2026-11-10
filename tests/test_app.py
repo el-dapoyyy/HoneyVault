@@ -49,6 +49,37 @@ def test_evaluation_page_renders(client):
     assert b"Evaluasi kuantitatif" in response.data
 
 
+def test_dte_page_renders(client):
+    response = client.get("/dte")
+    assert response.status_code == 200
+    assert b"Distribution-Transforming Encoder" in response.data
+
+
+def test_dte_correct_key_scenario_recovers_message(client):
+    from honeyvault import storage
+    from honeyvault.crypto.honeyvault_space import (
+        balance_tier, build_message_space,
+    )
+    rows = storage.load_customers()
+    space, _ = build_message_space(rows)
+
+    response = client.post("/dte", data={
+        "scenario": "correct", "customer_index": "0", "seed": "42"})
+    assert response.status_code == 200
+    assert b"decode(encode(pesan)) == pesan" in response.data
+
+    source = rows[0]
+    expected = (source["category"], balance_tier(float(source["balance"])))
+    assert expected[0].encode() in response.data
+
+
+def test_dte_wrong_key_scenario_produces_plausible_message(client):
+    response = client.post("/dte", data={"scenario": "wrong", "seed": "42"})
+    assert response.status_code == 200
+    assert b"Kunci salah" in response.data
+    assert b"masuk akal" in response.data
+
+
 def test_post_simulation_generates_decoys(client):
     response = client.post("/simulation", data={"method": "adaptive", "count": "5"})
     assert response.status_code == 200

@@ -21,9 +21,9 @@ saldo dan kategori pelanggan.
 
 **Penting:** prototipe ini belum merupakan implementasi Honey Encryption
 lengkap. Fitur yang sudah ada adalah pengelolaan data pelanggan sintetis, Data
-Profiling, Random Decoy, Adaptive Decoy per kategori, evaluasi kuantitatif, dan
-pengujian otomatis. DTE serta mekanisme enkripsi-dekripsi Honey Encryption
-masih harus dikembangkan.
+Profiling, Random Decoy, Adaptive Decoy per kategori, **DTE (Distribution-
+Transforming Encoder)**, evaluasi kuantitatif, dan pengujian otomatis. Skema
+enkripsi Honey Encryption penuh masih harus dikembangkan pada Tahap 5.
 
 ## 2. Tujuan
 
@@ -62,10 +62,39 @@ diimplementasikan dan diuji.
 | Identitas sintetis | Sudah ada | Nama dan ID decoy tidak pernah menyalin data asli |
 | Evaluasi/perbandingan | Sudah ada | Mean, std. deviasi, histogram, Wasserstein, KS, classifier, waktu |
 | Random seed | Sudah ada | Eksperimen dapat direproduksi |
-| Pengujian otomatis | Sudah ada | 40 test dengan pytest |
-| Enkripsi data | Belum ada | Rancang pada tahap berikutnya |
-| DTE | Belum ada | Komponen penting Honey Encryption |
+| Pengujian otomatis | Sudah ada | 75 test dengan pytest |
+| DTE | Sudah ada | Round-trip, distribusi terjaga, seed tak sah ditolak |
+| Enkripsi data | Belum ada | Rancang pada tahap 5 |
 | Dekripsi salah-kunci yang menghasilkan decoy | Belum ada | Belum boleh diklaim sebagai fitur |
+
+### Catatan tentang DTE
+
+DTE (Distribution-Transforming Encoder) mengubah pesan menjadi *seed* secara
+deterministik melalui dua fungsi yang saling berbalik:
+
+- `encode(pesan)` menghasilkan seed bilangan bulat.
+- `decode(seed)` mengembalikan pesan.
+
+Dua sifat yang sudah diuji:
+
+1. **Deterministik.** `decode(encode(pesan)) == pesan` berlaku untuk seluruh
+   pesan yang sah, diuji untuk setiap pesan pada ruang pesan.
+2. **Distribusi terjaga.** Seed yang diambil acak seragam menghasilkan pesan
+   sesuai model probabilitas, bukan sebaran seragam.
+
+Ruang pesan HoneyVault berbentuk pasangan `(kategori, tingkat_saldo)`.
+Bobot tiap pesan berasal dari frekuensi observasi pada dataset pelanggan,
+sehingga model distribusi benar-benar diturunkan dari data, bukan dipilih
+bebas. Konstruksi memakai pendekatan *inverse transform* dengan batas
+interval dihitung memakai aritmetika bulat sehingga tidak ada galat
+pembulatan floating point.
+
+Konsistensi encoding dan decoding juga diuji: seed yang sama selalu
+menghasilkan pesan yang sama.
+
+Batasannya: DTE di sini masih berupa komponen message-space. Ia belum
+digabungkan dengan skema enkripsi Honey Encryption, sehingga belum dapat
+diklaim aman dari brute force.
 
 ### Catatan Adaptive Decoy
 
@@ -239,11 +268,17 @@ HoneyVault/
 │   │   ├── evaluation.py      # metrik kuantitatif
 │   │   ├── identity.py        # generator identitas sintetis
 │   │   └── synthetic_dataset.py
+│   ├── crypto/
+│   │   ├── __init__.py
+│   │   ├── dte.py             # Distribution-Transforming Encoder
+│   │   ├── honeyvault_space.py# ruang pesan HoneyVault di atas DTE
+│   │   └── dte_evaluation.py  # evaluasi kualitas data DTE
 │   └── templates/
 │       ├── base.html
 │       ├── index.html
 │       ├── simulation.html
-│       └── evaluation.html
+│       ├── evaluation.html
+│       └── dte.html
 ├── static/
 │   └── style.css
 ├── data/
@@ -256,8 +291,10 @@ HoneyVault/
     └── test_app.py
 ```
 
-Folder `honeyvault/crypto/` dengan `dte.py` dan `honey_encryption.py` akan
-ditambahkan pada Tahap 4 dan 5, setelah model distribusi DTE dirancang.
+Folder `honeyvault/crypto/` berisi `dte.py` (Distribution-Transforming
+Encoder), `honeyvault_space.py` (ruang pesan HoneyVault di atas DTE), dan
+`dte_evaluation.py` (evaluasi kualitas data umpan dari DTE). Modul
+`honey_encryption.py` akan ditambahkan pada Tahap 5.
 
 ## 8. Alur penggunaan prototipe
 
@@ -357,6 +394,15 @@ untuk seluruh pesan valid dalam ruang uji.
 
 Sampling Gaussian sederhana bukan pengganti DTE.
 
+**Kriteria selesai:** round-trip berlaku untuk seluruh pesan sah, model
+distribusi terjaga, seed di luar ruang pesan valid ditolak, dan konsistensi
+encoding-decoding teruji.
+
+**Status:** selesai. Ruang pesan berupa pasangan `(kategori, tingkat_saldo)`
+dengan bobot dari frekuensi observasi. Halaman `/dte` memperlihatkan model
+distribusi, demo encode-decode, skenario kunci benar dan kunci salah, serta
+metrik kemiripan dengan data asli.
+
 ### Tahap 5 — Integrasikan Honey Encryption
 
 Setelah DTE dirancang dan diuji, pelajari skema Honey Encryption dari literatur
@@ -388,6 +434,9 @@ menghasilkan pesan umpan melalui DTE, bukan melalui fallback antarmuka.
 | Reproducibility | Seed eksperimen sama | Hasil dapat direproduksi |
 | Identitas decoy | Bandingkan nama decoy vs pelanggan | Tidak ada nama yang sama |
 | DTE round-trip | Encode lalu decode pesan valid | Pesan kembali sama |
+| DTE distribusi | Sampling seed acak | Frekuensi sesuai model |
+| DTE seed tak sah | Decode seed di luar rentang | Ditolak dengan error |
+| DTE konsistensi | Decode seed sama dua kali | Pesan identik |
 | Enkripsi benar | Kunci benar | Pesan asli kembali |
 | Enkripsi salah | Kunci salah | Decoy melalui DTE |
 | Evaluasi | Bandingkan dua metode | Metrik tercatat |

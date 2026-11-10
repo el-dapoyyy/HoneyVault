@@ -9,8 +9,8 @@ Tiga tingkat pemeriksaan, dari yang paling cepat ke yang paling menyeluruh:
 
 | Perintah | Waktu | Yang diperiksa |
 | --- | --- | --- |
-| `python verify.py` | ~2 detik | 20 pemeriksaan menyeluruh, keluar dengan kode 0/1 |
-| `python -m pytest tests/ -v` | ~2 detik | 40 test otomatis, perincian tiap test |
+| `python verify.py` | ~3 detik | 26 pemeriksaan menyeluruh, keluar dengan kode 0/1 |
+| `python -m pytest tests/ -v` | ~2 detik | 75 test otomatis, perincian tiap test |
 | Cek manual di browser | ~2 menit | Tampilan dan interaksi pengguna |
 
 Ketiganya dipakai bersama. Jangan hanya melakukan yang pertama.
@@ -51,6 +51,14 @@ Pemeriksaan yang dilakukan:
 - Mean decoy per kategori dalam 25% dari mean asli
 - Adaptive Decoy menang pada jarak Wasserstein
 
+**DTE**
+- Round-trip `decode(encode(pesan)) == pesan` untuk seluruh pesan sah
+- Model distribusi terjaga (frekuensi sampling sesuai bobot pesan)
+- Konsistensi: seed sama menghasilkan pesan sama
+- Seed di luar ruang pesan valid ditolak
+- Probabilitas tiap pesan sama dengan frekuensi observasi di data
+- Data DTE sulit dibedakan dari data asli (akurasi classifier dekat 0.5)
+
 **Aplikasi web**
 - 3 halaman merespons HTTP 200
 - CSS termuat
@@ -84,6 +92,8 @@ Empat berkas test:
 | `tests/test_profiling.py` | Statistik, kuartil, per kategori, data kosong |
 | `tests/test_decoy.py` | Identitas, batas, seed, kategori, pembulatan |
 | `tests/test_evaluation.py` | Metrik jarak, histogram, classifier, perbandingan |
+| `tests/test_crypto.py` | DTE: round-trip, distribusi, seed tak sah, interval |
+| `tests/test_dte_evaluation.py` | Kualitas data DTE, konsistensi, '=' dari asli |
 | `tests/test_app.py` | Rute Flask, validasi input, alur pengguna |
 
 ## 4. Membuktikan test benar-benar berguna
@@ -155,6 +165,15 @@ Jalankan `python app.py`, lalu buka `http://127.0.0.1:5000`.
 - [ ] Waktu pembentukan tampil dalam milidetik
 - [ ] Ganti jumlah ke `200` → metrik berubah, masih Adaptive menang
 
+### DTE (`/dte`)
+
+- [ ] Halaman menampilkan model distribusi ruang pesan
+- [ ] Tabel berisi pesan, jumlah observasi, probabilitas, dan rentang seed
+- [ ] Skenario **kunci benar**: pilih pelanggan → Run → pesan "Pesan kembali sama" berwarna hijau
+- [ ] Skenario **kunci salah**: seed acak → pesan tetap masuk akal, kategori dan tier terisi
+- [ ] Tabel "Contoh data umpan dari DTE" terisi 8 baris
+- [ ] Metrik: Wasserstein kecil, overlap > 0.7, KS p-value > 0.05, akurasi classifier < 0.7
+
 ### Tampilan
 
 - [ ] Navigasi atas bisa ke semua 3 halaman
@@ -189,9 +208,11 @@ python simulate.py --synthetic --count 200 --seed 42   # siapkan angka untuk lap
 Verifikasi ini hanya memastikan prototipe berjalan. Yang **belum** ada dan
 tidak boleh diklaim sebagai fitur:
 
-- DTE (Distribution-Transforming Encoder)
-- Mekanisme enkripsi dan dekripsi Honey Encryption
-- Dekripsi dengan kunci salah yang menghasilkan data umpan
+- Skema enkripsi Honey Encryption (Tahap 5)
+- Dekripsi dengan kunci salah pada skema enkripsi sebenarnya
+- Klaim "aman dari brute force"
 
-Pengujian di atas hanya memeriksa bahwa generator decoy bekerja dan datanya
-tidak bocor. Keamanan kriptografi itu adalah Tahap 4 dan 5, belum dikerjakan.
+DTE yang sudah ada adalah komponen message space. Ia sudah menghasilkan pesan
+yang sulit dibedakan dari pesan asli, tetapi itu sifat message space, bukan
+sifat skema enkripsi. Klaim keamanan kriptografi baru sah setelah Tahap 5
+selesai dan diuji.

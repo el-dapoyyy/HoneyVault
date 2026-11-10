@@ -85,35 +85,45 @@ def classifier_accuracy(real, decoy, seed=42, test_ratio=0.3):
     fitur (saldo). Data diacak dengan seed, lalu dipisah menjadi data latih
     dan data uji.
 
+    Kedua kelas diseimbangkan lebih dulu: kelas yang lebih besar dipotong
+    sehingga ukuran data latih dan uji sama persis untuk data asli dan
+    decoy. Tanpa ini, akurasi menjadi menyesatkan karena didominasi kelas
+    yang lebih besar, bukan karena classifier benar-benar membedakan.
+
     Returns:
-        Dict berisi akurasi latih, akurasi uji, dan ukuran sampel.
+        Dict berisi akurasi latih, akurasi uji, akurasi seimbang, dan
+        ukuran sampel.
     """
     if len(real) < 2 or len(decoy) < 2:
         return {
             "train_accuracy": float("nan"),
             "test_accuracy": float("nan"),
+            "balanced_accuracy": float("nan"),
             "train_size": 0,
             "test_size": 0,
-            "balanced_accuracy": float("nan"),
         }
 
     rng = np.random.default_rng(seed)
     real_shuffled = rng.permutation(real)
     decoy_shuffled = rng.permutation(decoy)
 
-    # Jumlah data latih mengikuti rasio yang sama untuk kedua kelas.
-    n_real_train = int(len(real_shuffled) * (1 - test_ratio))
-    n_decoy_train = int(len(decoy_shuffled) * (1 - test_ratio))
+    # Gunakan jumlah terkecil agar kedua kelas seimbang.
+    sample_size = min(len(real_shuffled), len(decoy_shuffled))
+    real_shuffled = real_shuffled[:sample_size]
+    decoy_shuffled = decoy_shuffled[:sample_size]
 
-    x_train = np.concatenate([real_shuffled[:n_real_train], decoy_shuffled[:n_decoy_train]])
+    n_train = int(sample_size * (1 - test_ratio))
+    n_train = max(1, min(n_train, sample_size - 1))
+
+    x_train = np.concatenate([real_shuffled[:n_train], decoy_shuffled[:n_train]])
     y_train = np.concatenate([
-        np.ones(n_real_train),
-        np.zeros(n_decoy_train),
+        np.ones(n_train),
+        np.zeros(n_train),
     ])
-    x_test = np.concatenate([real_shuffled[n_real_train:], decoy_shuffled[n_decoy_train:]])
+    x_test = np.concatenate([real_shuffled[n_train:], decoy_shuffled[n_train:]])
     y_test = np.concatenate([
-        np.ones(len(real_shuffled) - n_real_train),
-        np.zeros(len(decoy_shuffled) - n_decoy_train),
+        np.ones(sample_size - n_train),
+        np.zeros(sample_size - n_train),
     ])
 
     model = _GaussianNaiveBayes()
@@ -121,7 +131,7 @@ def classifier_accuracy(real, decoy, seed=42, test_ratio=0.3):
     train_acc = float((model.predict(x_train) == y_train).mean())
     test_acc = float((model.predict(x_test) == y_test).mean())
 
-    # Balanced accuracy lebih adil bila ukuran kedua kelas tidak sama.
+    # Balanced accuracy lebih adil bila pengujian memakai data uji kecil.
     balanced = _balanced_accuracy(model.predict(x_test), y_test)
 
     return {
@@ -130,6 +140,7 @@ def classifier_accuracy(real, decoy, seed=42, test_ratio=0.3):
         "balanced_accuracy": balanced,
         "train_size": int(len(x_train)),
         "test_size": int(len(x_test)),
+        "balanced": bool(len(x_train) == len(y_train)),
     }
 
 
