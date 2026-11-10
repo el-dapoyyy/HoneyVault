@@ -165,6 +165,15 @@ Hentikan server dengan `Ctrl + C`.
 python -m pytest tests/ -v
 ```
 
+Verifikasi menyeluruh (20 pemeriksaan: lingkungan, logika inti, aplikasi web,
+pengujian otomatis, keamanan):
+
+``` bash
+python verify.py
+```
+
+Panduan lengkap ada di `TESTING.md`.
+
 ### F. Jalankan simulasi dari terminal
 
 Untuk mengisi laporan tanpa membuka browser:
@@ -208,9 +217,12 @@ HoneyVault/
 ├── app.py                     # titik masuk, memanggil create_app()
 ├── config.py                  # konfigurasi terpusat
 ├── simulate.py                # CLI untuk eksperimen dari terminal
+├── verify.py                  # verifikasi mandiri, 20 pemeriksaan
 ├── requirements.txt
 ├── README.md
 ├── PROJECT_GUIDE.md
+├── TESTING.md                 # panduan testing lengkap
+├── pytest.ini
 ├── .gitignore
 ├── honeyvault/
 │   ├── __init__.py            # create_app() factory

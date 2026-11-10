@@ -47,6 +47,19 @@ Hentikan server dengan `Ctrl + C`.
 python -m pytest tests/ -v
 ```
 
+## Memverifikasi bahwa proyek benar-benar bekerja
+
+```bash
+python verify.py
+```
+
+Memeriksa 20 aspek (lingkungan, logika inti, aplikasi web, pengujian
+otomatis, keamanan) dan mencetak ringkasan BERHASIL/GAGAL. Keluar dengan
+kode `0` bila semua lulus.
+
+Panduan lengkap, termasuk cara membuktikan test Anda benar-benar menangkap
+masalah dan checklist manual di browser, ada di `TESTING.md`.
+
 ## Mensimulasikan tanpa browser
 
 Untuk kebutuhan laporan, eksperimen bisa dijalankan langsung dari terminal:
