@@ -80,6 +80,22 @@ def test_dte_wrong_key_scenario_produces_plausible_message(client):
     assert b"masuk akal" in response.data
 
 
+def test_security_page_renders(client):
+    response = client.get("/security")
+    assert response.status_code == 200
+    assert b"Honey Encryption" in response.data
+
+
+def test_security_page_shows_correct_and_wrong_key(client):
+    """Kunci benar memulihkan pesan asli; kunci salah tetap masuk akal."""
+    rows = storage.load_customers()
+    source = rows[0]
+    response = client.post("/security", data={"customer_index": "0"})
+    assert response.status_code == 200
+    assert b"Pesan asli pulih dengan tepat" in response.data
+    assert source["category"].encode() in response.data
+
+
 def test_post_simulation_generates_decoys(client):
     response = client.post("/simulation", data={"method": "adaptive", "count": "5"})
     assert response.status_code == 200

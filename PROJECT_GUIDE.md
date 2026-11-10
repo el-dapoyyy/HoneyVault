@@ -5,7 +5,8 @@
 > **Mata kuliah:** Kriptografi
 > **Jenis aplikasi:** Web
 > **Bahasa/framework:** Python + Flask
-> **Status:** Prototipe tahap 3 — Adaptive Decoy dan evaluasi kuantitatif sudah berjalan.
+> **Status:** Prototipe tahap 5 — DTE dan skema Honey Encryption sudah
+> berjalan, lengkap dengan evaluasi keamanan empiris dan pengujian otomatis.
 
 ## 1. Ringkasan proyek
 
@@ -19,11 +20,13 @@ Fokus pengembangan yang diusulkan adalah **Adaptive Decoy**: pembentukan data
 umpan berdasarkan karakteristik statistik data pelanggan, seperti distribusi
 saldo dan kategori pelanggan.
 
-**Penting:** prototipe ini belum merupakan implementasi Honey Encryption
-lengkap. Fitur yang sudah ada adalah pengelolaan data pelanggan sintetis, Data
-Profiling, Random Decoy, Adaptive Decoy per kategori, **DTE (Distribution-
-Transforming Encoder)**, evaluasi kuantitatif, dan pengujian otomatis. Skema
-enkripsi Honey Encryption penuh masih harus dikembangkan pada Tahap 5.
+**Penting:** prototipe ini sudah mengimplementasikan skema Honey Encryption
+dasar: DTE menjadi message space, seed di-mask dengan pseudorandom HMAC-SHA256
+yang diturunkan dari kunci dan nonce. Kunci salah menghasilkan pesan umpan
+yang tetap masuk akal. Yang **belum** ada adalah analisis keamanan formal,
+autentikasi, dan proteksi kanal samping. Skema enkripsi penuh yang dapat
+diverifikasi terhadap literatur primer selesai pada Tahap 5; pemurnian dan
+dokumentasi laporan dilanjutkan pada Tahap 6.
 
 ## 2. Tujuan
 
@@ -32,8 +35,8 @@ enkripsi Honey Encryption penuh masih harus dikembangkan pada Tahap 5.
 3. Membuat decoy menggunakan Random Decoy sebagai baseline.
 4. Membuat decoy menggunakan pendekatan Adaptive Decoy.
 5. Membandingkan kedua metode melalui pengujian statistik dan waktu proses.
-6. Menyiapkan rancangan integrasi Distribution-Transforming Encoder (DTE) dan
-   Honey Encryption.
+6. Mengintegrasikan DTE ke dalam skema Honey Encryption sesuai literatur
+   primer dan mengukur sifat keamanannya secara empiris.
 
 ## 3. Kontribusi dan batas klaim
 
@@ -62,10 +65,12 @@ diimplementasikan dan diuji.
 | Identitas sintetis | Sudah ada | Nama dan ID decoy tidak pernah menyalin data asli |
 | Evaluasi/perbandingan | Sudah ada | Mean, std. deviasi, histogram, Wasserstein, KS, classifier, waktu |
 | Random seed | Sudah ada | Eksperimen dapat direproduksi |
-| Pengujian otomatis | Sudah ada | 75 test dengan pytest |
+| Pengujian otomatis | Sudah ada | 94 test dengan pytest |
 | DTE | Sudah ada | Round-trip, distribusi terjaga, seed tak sah ditolak |
-| Enkripsi data | Belum ada | Rancang pada tahap 5 |
-| Dekripsi salah-kunci yang menghasilkan decoy | Belum ada | Belum boleh diklaim sebagai fitur |
+| Skema Honey Encryption | Sudah ada | Seed DTE di-mask HMAC; kunci salah -> pesan umpan |
+| Evaluasi keamanan skema | Sudah ada | Pemulihan kunci, plausibilitas, kebocoran, brute force |
+| Enkripsi data | Sudah ada | AES-GCM belum dipakai; skema inti memakai PRF atas DTE |
+| Dekripsi salah-kunci yang menghasilkan decoy | Sudah ada | Diuji lewat `/security` dan `verify.py` |
 
 ### Catatan tentang DTE
 
@@ -92,9 +97,44 @@ pembulatan floating point.
 Konsistensi encoding dan decoding juga diuji: seed yang sama selalu
 menghasilkan pesan yang sama.
 
-Batasannya: DTE di sini masih berupa komponen message-space. Ia belum
-digabungkan dengan skema enkripsi Honey Encryption, sehingga belum dapat
-diklaim aman dari brute force.
+Batasannya: DTE sendiri tetap hanya komponen message-space. Dipakai sebagai
+message space di dalam skema Honey Encryption, ia sudah menghasilkan pesan
+yang sulit dibedakan dari pesan asli. Sifat itu berasal dari message space,
+bukan dari analisis keamanan formal atas keseluruhan skema.
+
+### Catatan tentang skema Honey Encryption
+
+Skema yang diimplementasikan mengikuti konstruksi Juels dan Ristenpart (2014)
+dengan DTE sebagai message space:
+
+1. Pesan profil di-encode menjadi *seed* melalui DTE.
+2. Seed di-mask dengan pseudorandom yang diturunkan dari kunci rahasia dan
+   *nonce* acak (public seed). Hasilnya adalah *ciphertext*.
+3. Saat dekripsi, mask dihitung ulang dari kunci dan nonce yang sama, seed
+   dipulihkan, lalu diterjemahkan kembali melalui DTE menjadi pesan profil
+   beserta saldo di dalam sel tersebut.
+
+Kunci yang salah menghasilkan mask yang berbeda, sehingga seed yang dipulihkan
+berbeda dan tersebar acak. DTE menerjemahkannya menjadi pesan yang **tetap
+masuk akal** dan mengikuti model distribusi data pelanggan. Itulah inti
+Honey Encryption: kesalahan kunci tidak menghasilkan data rusak yang mencolok.
+
+Asumsi keamanan yang dinyatakan:
+
+- PRF diimplementasikan dengan HMAC-SHA256 dan dianggap pseudorandom ideal.
+- Nonce tidak pernah dipakai ulang dengan kunci yang sama.
+- Penyerang dapat menghitung PRF dengan kunci yang benar, tetapi tidak dapat
+  menebak kunci.
+
+Pengukuran yang tersedia (`/security`, `verify.py`, `simulate.py --honey`):
+pemulihan kunci benar 100%, 100% pesan umpan berada di ruang pesan DTE,
+akurasi classifier pembeda ≈ 0.51, dan tidak terdeteksi kebocoran ciphertext.
+Angka ini **empiris**, bukan bukti keamanan formal.
+
+Batasannya: belum ada autentikasi (ciphertext tidak dilindungi MAC), belum
+ada analisis kanal samping, dan belum ada uji keamanan formal. Kanal samping
+pada PRF berbasis HMAC dianggap kuat dalam literatur, tetapi itu asumsi —
+prototipe ini tidak mengujinya.
 
 ### Catatan Adaptive Decoy
 
@@ -194,8 +234,8 @@ Hentikan server dengan `Ctrl + C`.
 python -m pytest tests/ -v
 ```
 
-Verifikasi menyeluruh (20 pemeriksaan: lingkungan, logika inti, aplikasi web,
-pengujian otomatis, keamanan):
+Verifikasi menyeluruh (32 pemeriksaan: lingkungan, logika inti, DTE, skema
+Honey Encryption, aplikasi web, pengujian otomatis, keamanan):
 
 ``` bash
 python verify.py
@@ -218,6 +258,8 @@ python simulate.py --synthetic --count 200 --seed 42
 | `--seed N` | Seed agar hasil dapat direproduksi |
 | `--method random` / `--method adaptive` | Satu metode saja |
 | `--show-decoy` | Tampilkan contoh baris data umpan |
+| `--dte` | Tambahkan laporan kualitas DTE |
+| `--honey` | Tambahkan laporan pengukuran keamanan skema |
 
 ### G. Pengaturan opsional
 
@@ -260,7 +302,9 @@ HoneyVault/
 │   │   ├── __init__.py        # register_blueprints()
 │   │   ├── dashboard.py
 │   │   ├── simulation.py
-│   │   └── evaluation.py
+│   │   ├── evaluation.py
+│   │   ├── dte.py
+│   │   └── security.py        # demo kunci benar vs kunci salah
 │   ├── services/
 │   │   ├── __init__.py
 │   │   ├── profiling.py       # Data Profiling
@@ -272,13 +316,16 @@ HoneyVault/
 │   │   ├── __init__.py
 │   │   ├── dte.py             # Distribution-Transforming Encoder
 │   │   ├── honeyvault_space.py# ruang pesan HoneyVault di atas DTE
-│   │   └── dte_evaluation.py  # evaluasi kualitas data DTE
+│   │   ├── dte_evaluation.py  # evaluasi kualitas data DTE
+│   │   ├── honey_encryption.py# skema Honey Encryption (DTE + mask PRF)
+│   │   └── security_evaluation.py # pengukuran keamanan skema
 │   └── templates/
 │       ├── base.html
 │       ├── index.html
 │       ├── simulation.html
 │       ├── evaluation.html
-│       └── dte.html
+│       ├── dte.html
+│       └── security.html
 ├── static/
 │   └── style.css
 ├── data/
@@ -288,13 +335,17 @@ HoneyVault/
     ├── test_profiling.py
     ├── test_decoy.py
     ├── test_evaluation.py
+    ├── test_crypto.py
+    ├── test_dte_evaluation.py
+    ├── test_honey_encryption.py
     └── test_app.py
 ```
 
 Folder `honeyvault/crypto/` berisi `dte.py` (Distribution-Transforming
-Encoder), `honeyvault_space.py` (ruang pesan HoneyVault di atas DTE), dan
-`dte_evaluation.py` (evaluasi kualitas data umpan dari DTE). Modul
-`honey_encryption.py` akan ditambahkan pada Tahap 5.
+Encoder), `honeyvault_space.py` (ruang pesan HoneyVault di atas DTE),
+`dte_evaluation.py` (evaluasi kualitas data umpan dari DTE),
+`honey_encryption.py` (skema Honey Encryption), dan `security_evaluation.py`
+(pengukuran keamanan skema).
 
 ## 8. Alur penggunaan prototipe
 
@@ -309,21 +360,27 @@ Encoder), `honeyvault_space.py` (ruang pesan HoneyVault di atas DTE), dan
 8. Sistem menghasilkan data umpan berdasarkan model Gaussian per kategori.
 9. Pengguna membuka halaman Evaluasi untuk membandingkan kedua metode melalui
    metrik statistik.
+10. Pengguna membuka halaman Keamanan untuk melihat satu pelanggan dienkripsi
+    lalu didekripsi dengan kunci benar dan kunci salah, beserta hasil
+    pengukuran keamanan skema.
 
-## 9. Alur Honey Encryption penuh yang direncanakan
+## 9. Alur Honey Encryption yang sudah berjalan
 
 1. Pengguna memilih data sintetis yang akan dilindungi.
-2. Sistem membentuk model distribusi pesan dan DTE.
+2. Sistem membentuk model distribusi pesan dan DTE dari dataset tersebut.
 3. Pesan diubah menjadi seed melalui proses encoding DTE.
-4. Seed diamankan menggunakan skema Honey Encryption yang sesuai.
-5. Saat dekripsi dilakukan, seed diterjemahkan kembali melalui DTE.
-6. Dengan kunci benar, sistem diharapkan memperoleh pesan asli.
-7. Dengan kunci salah, sistem diharapkan memperoleh pesan umpan yang masuk akal.
+4. Seed di-mask dengan pseudorandom dari kunci rahasia dan nonce acak.
+5. Saat dekripsi dilakukan, mask dihitung ulang dan seed diterjemahkan
+   kembali melalui DTE.
+6. Dengan kunci benar, pesan asli diperoleh kembali.
+7. Dengan kunci salah, pesan umpan yang masuk akal diperoleh.
 8. Peneliti mengevaluasi apakah pesan umpan sulit dibedakan dari pesan asli.
 
 **Catatan kriptografi:** mengenkripsi JSON dengan AES-GCM lalu menampilkan data
 palsu ketika autentikasi gagal bukan Honey Encryption. Itu hanya fallback
-aplikasi. DTE harus menjadi bagian nyata dari skema Honey Encryption.
+aplikasi. Pada prototipe ini, DTE adalah bagian nyata dari skema: seed
+DTE-lah yang di-mask, dan pesan umpan dihasilkan oleh DTE, bukan oleh
+fallback antarmuka.
 
 ## 10. Roadmap pengembangan
 
@@ -413,12 +470,19 @@ intuisi. Dokumentasikan asumsi keamanan, threat model, dan batasan.
 **Kriteria selesai:** kunci benar mengembalikan pesan asli dan kunci salah
 menghasilkan pesan umpan melalui DTE, bukan melalui fallback antarmuka.
 
+**Status:** selesai. Skema memakai DTE sebagai message space dan PRF
+HMAC-SHA256 atas kunci dan nonce sebagai mask. Halaman `/security`
+memperlihatkan skenario kunci benar dan kunci salah; `verify.py` menguji
+pemulihan kunci, plausibilitas umpan, kebocoran ciphertext, syarat nonce
+unik, dan perilaku brute force. Asumsi keamanan, threat model, dan batasan
+tertulis di `README.md` dan bagian 4 guide ini.
+
 ### Tahap 6 — Pengujian dan dokumentasi
 
 - [x] Uji input valid dan tidak valid.
-- [ ] Uji konsistensi DTE.
-- [ ] Uji enkripsi dan dekripsi.
-- [ ] Uji skenario kunci benar dan salah.
+- [x] Uji konsistensi DTE.
+- [x] Uji enkripsi dan dekripsi.
+- [x] Uji skenario kunci benar dan salah.
 - [x] Evaluasi kemiripan distribusi decoy.
 - [x] Catat waktu proses dan batasan sistem.
 - [ ] Dokumentasikan hasil dalam laporan dan presentasi.
@@ -499,12 +563,14 @@ Salin instruksi berikut ke asisten AI setelah membuka folder proyek:
 ## 15. Langkah berikutnya
 
 1. Jalankan `python -m pytest tests/ -v` untuk memastikan pengujian lulus.
-2. Jalankan `python app.py` lalu buka `http://127.0.0.1:5000/evaluation`.
+2. Jalankan `python app.py` lalu buka `http://127.0.0.1:5000/security`.
 3. Bandingkan Random Decoy dan Adaptive Decoy pada dataset 150 pelanggan.
 4. Catat hasil eksperimen (mean, Wasserstein, KS, akurasi classifier, waktu).
-5. Rancang DTE pada ruang pesan saldo yang kecil.
-6. Integrasikan DTE dengan skema Honey Encryption sesuai literatur primer.
-7. Uji skenario kunci benar dan kunci salah.
+5. Catat hasil pengukuran skema: `python simulate.py --synthetic --seed 42 --honey`.
+6. Susun laporan: latar belakang, metode (DTE dan mask PRF), hasil dan
+   pembahasan, batasan, dan kesimpulan.
+7. Siapkan presentasi dari tabel di `simulate.py` dan halaman `/security`.
 
-**Prioritas saat ini:** evaluations sudah berjalan. Selanjutnya rancang DTE,
-lalu integrasikan Honey Encryption, dan lengkapi pengujian serta laporan.
+**Prioritas saat ini:** Tahap 5 selesai. Yang tersisa adalah menyusun laporan
+akademik dan presentasi, serta memperbesar ruang pesan bila diperlukan agar
+distribusi umpan lebih mirip data asli.

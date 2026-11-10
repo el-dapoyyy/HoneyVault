@@ -53,9 +53,9 @@ python -m pytest tests/ -v
 python verify.py
 ```
 
-Memeriksa 20 aspek (lingkungan, logika inti, aplikasi web, pengujian
-otomatis, keamanan) dan mencetak ringkasan BERHASIL/GAGAL. Keluar dengan
-kode `0` bila semua lulus.
+Memeriksa 32 aspek (lingkungan, logika inti, DTE, skema Honey Encryption,
+aplikasi web, pengujian otomatis, keamanan) dan mencetak ringkasan
+BERHASIL/GAGAL. Keluar dengan kode `0` bila semua lulus.
 
 Panduan lengkap, termasuk cara membuktikan test Anda benar-benar menangkap
 masalah dan checklist manual di browser, ada di `TESTING.md`.
@@ -76,6 +76,7 @@ python simulate.py --synthetic --count 200 --seed 42
 | `--method random` / `--method adaptive` | Tampilkan hanya satu metode |
 | `--show-decoy` | Tampilkan contoh baris data umpan |
 | `--dte` | Tambahkan laporan kualitas DTE |
+| `--honey` | Tambahkan laporan pengukuran keamanan Honey Encryption |
 
 Keluarannya berupa tabel metrik yang bisa langsung disalin ke laporan.
 Seed yang sama dengan data yang sama selalu menghasilkan angka yang sama.
@@ -97,6 +98,13 @@ Atau gunakan tombol "Muat dataset sintetis besar" pada dashboard.
 - **Adaptive Decoy** berbasis distribusi Gaussian per kategori.
 - **DTE (Distribution-Transforming Encoder)**: `encode(pesan) -> seed` dan
   `decode(seed) -> pesan` yang deterministik dan menjaga model distribusi.
+- **Skema Honey Encryption**: DTE sebagai message space, seed di-mask dengan
+  pseudorandom HMAC-SHA256 dari kunci dan nonce. Kunci salah menghasilkan
+  pesan yang **masih masuk akal**, bukan data rusak.
+- **Evaluasi keamanan skema**: pemulihan kunci benar, plausibilitas pesan
+  umpan, uji kebocoran ciphertext, ketidakdapatbedakan data asli vs umpan,
+  dan efektivitas brute force atas kunci.
+- Halaman `/security` untuk demonstrasi kunci benar versus kunci salah.
 - Identitas decoy sepenuhnya sintetis (`DEC-001` + nama fiktif terpisah).
 - **Evaluasi kuantitatif**: selisih mean dan standar deviasi, overlap
   histogram, Wasserstein distance, statistik Kolmogorov-Smirnov, akurasi
@@ -119,13 +127,26 @@ python app.py
 
 ## Batasan penting
 
-Aplikasi ini **BELUM** mengimplementasikan Honey Encryption sesungguhnya.
-Sudah ada Distribution-Transforming Encoder (DTE) dengan sifat deterministik
-dan model distribusi terjaga, **tetapi belum ada** skema enkripsi,
-autentikasi, atau perlindungan data produksi. DTE adalah komponen message
-space; DTE saja belum membuat sistem aman dari brute force.
+Skema Honey Encryption di prototipe ini sudah berjalan: DTE menjadi message
+space, seed di-mask dengan pseudorandom HMAC-SHA256 yang diturunkan dari kunci
+rahasia dan nonce. Kunci benar memulihkan pesan asli; kunci salah menghasilkan
+pesan lain yang tetap mengikuti model distribusi data pelanggan.
 
-Ini adalah prototipe untuk menguji komponen usulan, yaitu generator decoy
-adaptif beserta message space-nya. Gunakan data sintetis saja; jangan masukkan
-data pelanggan nyata. Server debug hanya untuk pengembangan lokal dan mati
-secara default.
+Yang **belum** ada dan tidak boleh diklaim:
+
+- **Bukti keamanan formal.** Pengukuran di `verify.py` dan halaman
+  `/security` bersifat empiris, bukan analisis reductions terhadap model
+  keamanan.
+- **Autentikasi.** Ciphertext tidak dilindungi MAC, sehingga penyerang aktif
+  bisa mengubah seed yang pulih (hasilnya tetap pesan yang sah, bukan data
+  kacau). Honey Encryption memang tidak dirancang untuk tujuan itu.
+- **Proteksi kanal samping.**
+- **Produksi.** Prototipe lokal untuk penelitian kuliah, bukan aplikasi
+  produksi. Jangan simpan data pelanggan nyata dan jangan publikasikan
+  server debug.
+
+Catatan: ruang pesan prototipe hanya sekitar 10 profil, jadi peluang acak
+mendapatkan pesan yang benar per percobaan kunci bukan nol. Itu justru
+sifat yang diinginkan Honey Encryption: tebakan yang salah tetap menghasilkan
+pesan yang tampak sah, sehingga penyerang tidak bisa memakai "hasil kacau"
+sebagai penanda tebakan salah.

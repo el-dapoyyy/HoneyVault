@@ -3,6 +3,7 @@
 from honeyvault.routes.dashboard import bp as dashboard_bp
 from honeyvault.routes.dte import bp as dte_bp
 from honeyvault.routes.evaluation import bp as evaluation_bp
+from honeyvault.routes.security import bp as security_bp
 from honeyvault.routes.simulation import bp as simulation_bp
 
 
@@ -12,4 +13,5 @@ def register_blueprints(app):
     app.register_blueprint(simulation_bp)
     app.register_blueprint(evaluation_bp)
     app.register_blueprint(dte_bp)
+    app.register_blueprint(security_bp)
     return app

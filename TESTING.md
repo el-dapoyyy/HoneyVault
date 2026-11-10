@@ -9,8 +9,8 @@ Tiga tingkat pemeriksaan, dari yang paling cepat ke yang paling menyeluruh:
 
 | Perintah | Waktu | Yang diperiksa |
 | --- | --- | --- |
-| `python verify.py` | ~3 detik | 26 pemeriksaan menyeluruh, keluar dengan kode 0/1 |
-| `python -m pytest tests/ -v` | ~2 detik | 75 test otomatis, perincian tiap test |
+| `python verify.py` | ~5 detik | 32 pemeriksaan menyeluruh, keluar dengan kode 0/1 |
+| `python -m pytest tests/ -v` | ~3 detik | 94 test otomatis, perincian tiap test |
 | Cek manual di browser | ~2 menit | Tampilan dan interaksi pengguna |
 
 Ketiganya dipakai bersama. Jangan hanya melakukan yang pertama.
@@ -30,7 +30,7 @@ RINGKASAN VERIFIKASI HONEYVAULT
 BERHASIL  Versi Python memadai
 BERHASIL  Dependensi terpasang
 ...
-SEMUA PEMERIKSAAN BERHASIL (20/20)
+SEMUA PEMERIKSAAN BERHASIL (32/32)
 ```
 
 Exit code `0` berarti semua lulus, `1` berarti ada yang gagal. Ini berguna
@@ -59,6 +59,14 @@ Pemeriksaan yang dilakukan:
 - Probabilitas tiap pesan sama dengan frekuensi observasi di data
 - Data DTE sulit dibedakan dari data asli (akurasi classifier dekat 0.5)
 
+**Skema Honey Encryption**
+- Kunci benar memulihkan 100% pesan asli
+- Kunci salah menghasilkan pesan yang 100% berada di ruang pesan DTE
+- Ciphertext tidak bocor pesan (uji KS antar kategori dan terhadap seragam)
+- Pesan umpan tidak dapat dibedakan dari pesan asli (akurasi classifier < 0.7)
+- Nonce yang dipakai ulang terdeteksi bocor (mask saling menghilangkan)
+- Brute force kunci tidak menghasilkan pesan yang kacau
+
 **Aplikasi web**
 - 3 halaman merespons HTTP 200
 - CSS termuat
@@ -74,7 +82,7 @@ Pemeriksaan yang dilakukan:
 - Tidak ada kunci rahasia hardcoded
 - Mode debug mati secara default
 - Server hanya listen di loopback (127.0.0.1)
-- Tidak ada klaim Honey Encryption palsu di kode
+- Klaim keamanan di dokumentasi tidak melampaui bukti yang ada
 
 ## 3. Test otomatis per unit
 
@@ -85,7 +93,7 @@ python -m pytest -k "reproducible" -v      # satu topik
 python -m pytest --tb=short              # ringkas saat gagal
 ```
 
-Empat berkas test:
+Enam berkas test:
 
 | Berkas | Cakupan |
 | --- | --- |
@@ -94,6 +102,7 @@ Empat berkas test:
 | `tests/test_evaluation.py` | Metrik jarak, histogram, classifier, perbandingan |
 | `tests/test_crypto.py` | DTE: round-trip, distribusi, seed tak sah, interval |
 | `tests/test_dte_evaluation.py` | Kualitas data DTE, konsistensi, '=' dari asli |
+| `tests/test_honey_encryption.py` | Kunci benar, kunci salah, kebocoran, nonce |
 | `tests/test_app.py` | Rute Flask, validasi input, alur pengguna |
 
 ## 4. Membuktikan test benar-benar berguna
@@ -174,9 +183,23 @@ Jalankan `python app.py`, lalu buka `http://127.0.0.1:5000`.
 - [ ] Tabel "Contoh data umpan dari DTE" terisi 8 baris
 - [ ] Metrik: Wasserstein kecil, overlap > 0.7, KS p-value > 0.05, akurasi classifier < 0.7
 
+### Keamanan (`/security`)
+
+- [ ] Halaman terbuka, tabel pengukuran terisi
+- [ ] Pilih pelanggan → "Enkripsi lalu dekripsi dua kali"
+- [ ] Bagian "Dekripsi dengan kunci benar": pesan **sama** dengan data asli,
+      flash hijau "Pesan asli pulih dengan tepat"
+- [ ] Bagian "Dekripsi dengan kunci salah": pesan **berbeda**, tetapi kategori
+      dan tier terisi dan plausibel
+- [ ] "Pemulihan dengan kunci benar" = 100%
+- [ ] "Kebocoran ciphertext" = "Tidak terdeteksi"
+- [ ] Akurasi classifier ≈ 0.5 (bukan 1.0)
+- [ ] "Semua tebakan kunci terlihat masuk akal" = "Ya"
+- [ ] Halaman menampilkan peringatan batasan (bukan klaim "aman penuh")
+
 ### Tampilan
 
-- [ ] Navigasi atas bisa ke semua 3 halaman
+- [ ] Navigasi atas bisa ke semua 5 halaman
 - [ ] Tabel panjang bisa di-scroll (maks 150 baris)
 - [ ] Tampilan rapi di lebar 1280px
 - [ ] Tampilan rapi di lebar 375px (mobile) — perkecil jendela browser
@@ -197,22 +220,25 @@ Jalankan `python app.py`, lalu buka `http://127.0.0.1:5000`.
 ## 7. Checklist sebelum presentasi
 
 ```bash
-python verify.py                    # harus: SEMUA PEMERIKSAAN BERHASIL (20/20)
-python -m pytest tests/ -v          # harus: 40 passed
+python verify.py                    # harus: SEMUA PEMERIKSAAN BERHASIL (32/32)
+python -m pytest tests/ -v          # harus: 94 passed
 python app.py                       # cek manual checklist di atas
 python simulate.py --synthetic --count 200 --seed 42   # siapkan angka untuk laporan
+python simulate.py --synthetic --seed 42 --honey      # tabel keamanan skema
 ```
 
 ## 8. Apa yang BELUM boleh diklaim
 
-Verifikasi ini hanya memastikan prototipe berjalan. Yang **belum** ada dan
-tidak boleh diklaim sebagai fitur:
+Verifikasi ini hanya memastikan prototipe berjalan dan menunjukkan sifat
+yang diharapkan secara empiris. Yang **belum** ada dan tidak boleh diklaim
+sebagai fitur:
 
-- Skema enkripsi Honey Encryption (Tahap 5)
-- Dekripsi dengan kunci salah pada skema enkripsi sebenarnya
-- Klaim "aman dari brute force"
+- **Bukti keamanan formal** terhadap model keamanan yang dinyatakan.
+- **Autentikasi**: ciphertext tidak dilindungi MAC.
+- **Proteksi kanal samping** (diuji, bukan diasumsikan aman).
+- Klaim "aman dari brute force" tanpa pengukuran yang menyertainya.
 
-DTE yang sudah ada adalah komponen message space. Ia sudah menghasilkan pesan
-yang sulit dibedakan dari pesan asli, tetapi itu sifat message space, bukan
-sifat skema enkripsi. Klaim keamanan kriptografi baru sah setelah Tahap 5
-selesai dan diuji.
+Skema Honey Encryption sudah berjalan dan diuji: kunci benar memulihkan pesan
+asli, kunci salah menghasilkan pesan umpan melalui DTE yang sulit dibedakan
+dari pesan asli. Angka pada halaman `/security` dan `simulate.py --honey`
+adalah hasil pengukuran, bukan klaim formal.

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Honey Encryption: keamanan skema</h1>
+<p class="lead">
+  Di sini DTE dipakai sebagai message space, lalu seed di-mask dengan
+  pseudorandom dari kunci rahasia. Kunci salah menghasilkan pesan yang tetap
+  masuk akal, bukan data rusak.
+</p>
+
+<section>
+  <h2>Demo: satu pelanggan, dua kunci</h2>
+  <form method="post">
+    <label>Pelanggan yang dilindungi
+      <select name="customer_index">
+        {% for r in rows %}
+        <option value="{{ loop.index0 }}">{{ r.id }} &mdash; {{ r.name }} ({{ r.category }}, Rp {{ "{:,.0f}".format(r.balance) }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Enkripsi lalu dekripsi dua kali</button>
+  </form>
+
+  {% if result %}
+  <div class="demo-result">
+    <h3>Data asli</h3>
+    <p>{{ result.source.name }} &mdash; {{ result.source.category }},
+      Rp {{ "{:,.0f}".format(result.source.balance) }}</p>
+    <p class="note">Pesan profil:
+      <b>{{ result.expected_message[0] }} / {{ result.expected_message[1] }}</b></p>
+
+    <h3>Enkripsi</h3>
+    <p>Seed DTE di-mask dengan pseudorandom dari kunci dan nonce.</p>
+    <p>Nonce : <code>{{ result.nonce.hex() }}</code></p>
+    <p>Ciphertext : <code>{{ result.ciphertext }}</code></p>
+
+    <h3>Dekripsi dengan kunci benar</h3>
+    <p class="note">
+      Pesan: <b>{{ result.correct.category }} / {{ result.correct.tier }}</b>,
+      saldo Rp {{ "{:,.0f}".format(result.correct.balance) }}
+    </p>
+    {% if result.correct_matches %}
+    <p class="flash success">Pesan asli pulih dengan tepat.</p>
+    {% else %}
+    <p class="flash error">Pesan tidak pulih &mdash; ada bug.</p>
+    {% endif %}
+
+    <h3>Dekripsi dengan kunci salah</h3>
+    <p class="note">
+      Pesan: <b>{{ result.wrong.category }} / {{ result.wrong.tier }}</b>,
+      saldo Rp {{ "{:,.0f}".format(result.wrong.balance) }}
+    </p>
+    <p class="flash success">
+      Pesan berbeda dari aslinya, tetapi <b>masih masuk akal</b>: kategorinya
+      ada dalam data pelanggan dan saldonya mengikuti model distribusi.
+      Inilah inti Honey Encryption.
+    </p>
+  </div>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Hasil pengukuran keamanan</h2>
+
+  <h3>1. Kerahasiaan pesan</h3>
+  <div class="table-scroll">
+    <table>
+      <tr><th>Pengukuran</th><th>Nilai</th><th>Arti</th></tr>
+      <tr>
+        <td>Pemulihan dengan kunci benar</td>
+        <td>{{ "{:.0%}".format(recovery.success_rate) }} ({{ recovery.recovered }}/{{ recovery.checked }})</td>
+        <td>Seluruh pesan asli pulih dengan tepat</td>
+      </tr>
+      <tr>
+        <td>Kebocoran ciphertext</td>
+        <td>{{ "Tidak terdeteksi" if not leakage.leak_detected else "Terdeteksi" }}</td>
+        <td>Uji KS antar kategori pesan</td>
+      </tr>
+      <tr>
+        <td>Ciphertext vs seed seragam acak</td>
+        <td>p = {{ "{:.4f}".format(leakage.ks_versus_uniform.pvalue) }}</td>
+        <td>p besar = ciphertext tidak membawa informasi pesan</td>
+      </tr>
+      <tr>
+        <td>Rasio ciphertext unik</td>
+        <td>{{ "{:.3f}".format(leakage.distinct_ratio) }}</td>
+        <td>Tidak ada ciphertext yang berulang</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h3>2. Plausibilitas pesan umpan (kunci salah)</h3>
+  <div class="table-scroll">
+    <table>
+      <tr><th>Pengukuran</th><th>Nilai</th><th>Arti</th></tr>
+      <tr>
+        <td>Kategori pesan umpan valid</td>
+        <td>{{ "{:.0%}".format(plausibility.plausible_rate) }}</td>
+        <td>Semua kategori ada dalam dataset asli</td>
+      </tr>
+      <tr>
+        <td>Pesan umpan dalam ruang pesan DTE</td>
+        <td>{{ "{:.0%}".format(plausibility.in_message_space_rate) }}</td>
+        <td>Selalu pesan yang sah menurut model</td>
+      </tr>
+      <tr>
+        <td>Semua tebakan kunci terlihat masuk akal</td>
+        <td>{{ "Ya" if brute_force.all_guesses_plausible else "Tidak" }}</td>
+        <td>Penyerang tidak bisa tahu mana yang salah</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h3>3. Ketidakdapatbedakan data asli dan pesan umpan</h3>
+  <div class="table-scroll">
+    <table>
+      <tr><th>Metrik</th><th>Nilai</th><th>Arti</th></tr>
+      <tr>
+        <td>Wasserstein distance</td>
+        <td>{{ "{:,.0f}".format(indistinguishability.wasserstein_distance) }}</td>
+        <td>Lebih kecil = sebaran lebih dekat</td>
+      </tr>
+      <tr>
+        <td>Overlap histogram</td>
+        <td>{{ "{:.3f}".format(indistinguishability.histogram_overlap) }}</td>
+        <td>1.0 = histogram identik</td>
+      </tr>
+      <tr>
+        <td>Statistik KS</td>
+        <td>{{ "{:.4f}".format(indistinguishability.ks_statistic) }} (p = {{ "{:.4f}".format(indistinguishability.ks_pvalue) }})</td>
+        <td>p besar = tidak bisa dibedakan</td>
+      </tr>
+      <tr>
+        <td>Akurasi classifier</td>
+        <td>{{ "{:.3f}".format(indistinguishability.classifier.test_accuracy) }}</td>
+        <td>0.5 = tidak punya daya beda</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h3>4. Brute force atas kunci</h3>
+  <div class="table-scroll">
+    <table>
+      <tr><th>Pengukuran</th><th>Nilai</th></tr>
+      <tr><td>Ruang kunci</td><td>2<sup>128</sup></td></tr>
+      <tr><td>Ruang pesan</td><td>{{ brute_force.message_space_size }} pesan</td></tr>
+      <tr><td>Peluang acak pesan benar per percobaan</td><td>{{ "{:.1%}".format(brute_force.chance_by_guessing) }}</td></tr>
+      <tr><td>Percobaan yang dibutuhkan untuk memastikan</td><td>sekitar 2<sup>128</sup></td></tr>
+      <tr><td>Semua tebakan menghasilkan pesan masuk akal</td><td>{{ "Ya" if brute_force.all_guesses_plausible else "Tidak" }}</td></tr>
+    </table>
+  </div>
+  <p class="note">
+    Peluang acak mendapatkan pesan yang benar per percobaan (<b>tidak</b>
+    nol, karena ruang pesan kecil) memang disengaja: justru inilah
+    manfaat Honey Encryption. Penyerang yang menebak kunci mendapat pesan yang
+    tampak sah, sehingga tidak dapat memakai "hasil yang kacau" sebagai
+    penanda tebakan salah. Yang dilindungi adalah kerahasiaan, bukan
+    probabilitas pesan benar per percobaan.
+  </p>
+</section>
+
+<p class="warning">
+  <b>Batasan:</b> skema ini memakai HMAC-SHA256 sebagai PRF dan assumes
+  nonce tidak pernah dipakai ulang. Autentikasi, proteksi kanal samping, dan
+  analisis keamanan formal belum dikerjakan. Pengukuran di atas bersifat
+  empiris dan <b>bukan</b> bukti keamanan kriptografi formal.
+</p>
+{% endblock %}

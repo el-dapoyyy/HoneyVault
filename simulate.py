@@ -8,6 +8,8 @@ Contoh pemakaian:
     python simulate.py --synthetic            # pakai dataset 150 pelanggan
     python simulate.py --method adaptive     # hanya satu metode
     python simulate.py --show-decoy          # tampilkan contoh data umpan
+    python simulate.py --dte --seed 42        # laporan kualitas DTE
+    python simulate.py --honey --seed 42       # laporan keamanan enkripsi
 
 Keluarannya berupa tabel di terminal yang bisa disalin ke laporan.
 """
@@ -181,6 +183,94 @@ def print_dte_report(rows, count=300, seed=42):
     print()
 
 
+def print_honey_report(rows, count=300, seed=42):
+    """Menampilkan laporan pengukuran keamanan skema Honey Encryption.
+
+    Laporan ini dipakai untuk mengisi bagian "hasil dan pembahasan" pada
+    laporan. Semua angka berasal dari pengukuran empiris, bukan klaim
+    keamanan formal.
+    """
+    from honeyvault.crypto.security_evaluation import (
+        brute_force_efficiency,
+        evaluate_correct_key_recovery,
+        evaluate_ciphertext_leakage,
+        evaluate_indistinguishability,
+        evaluate_nonce_reuse,
+        evaluate_wrong_key_plausibility,
+    )
+
+    recovery = evaluate_correct_key_recovery(rows, samples=100)
+    plausibility = evaluate_wrong_key_plausibility(rows, count=count, seed=seed)
+    indistinguishability = evaluate_indistinguishability(
+        rows, count=count, seed=seed)
+    leakage = evaluate_ciphertext_leakage(rows, samples=max(count, 1200))
+    nonce = evaluate_nonce_reuse(rows)
+    brute_force = brute_force_efficiency(rows, attempts=200, seed=seed)
+
+    print("=" * 68)
+    print("HONEY ENCRYPTION (DTE + MASK PRF)")
+    print("=" * 68)
+    print("Jumlah pesan di ruang pesan : {}".format(
+        brute_force["message_space_size"]))
+    print()
+
+    print("1. Kerahasiaan pesan")
+    print("-" * 68)
+    print("  Pemulihan kunci benar      : {:.0%} ({}/{})".format(
+        recovery["success_rate"], recovery["recovered"], recovery["checked"]))
+    print("  Kebocoran ciphertext        : {}".format(
+        "terdeteksi" if leakage["leak_detected"] else "tidak terdeteksi"))
+    print("  Ciphertext vs seed seragam  : p = {:.4f}".format(
+        leakage["ks_versus_uniform"]["pvalue"]))
+    print("  Rasio ciphertext unik       : {:.3f}".format(
+        leakage["distinct_ratio"]))
+    print()
+
+    print("2. Plausibilitas pesan umpan (kunci salah)")
+    print("-" * 68)
+    print("  Kategori pesan umpan valid  : {:.0%}".format(
+        plausibility["plausible_rate"]))
+    print("  Pesan dalam ruang pesan DTE : {:.0%}".format(
+        plausibility["in_message_space_rate"]))
+    print("  Semua tebakan masuk akal   : {}".format(
+        "ya" if brute_force["all_guesses_plausible"] else "tidak"))
+    print()
+
+    print("3. Ketidakdapatbedakan data asli vs pesan umpan")
+    print("-" * 68)
+    print("  Wasserstein distance        : {:,.0f}".format(
+        indistinguishability["wasserstein_distance"]))
+    print("  Overlap histogram           : {:.3f}".format(
+        indistinguishability["histogram_overlap"]))
+    print("  Statistik KS                : {:.4f} (p = {:.4f})".format(
+        indistinguishability["ks_statistic"],
+        indistinguishability["ks_pvalue"]))
+    print("  Akurasi classifier          : {:.3f} (0.5 = tidak bisa dibedakan)".format(
+        indistinguishability["classifier"]["test_accuracy"]))
+    print()
+
+    print("4. Brute force atas kunci")
+    print("-" * 68)
+    print("  Ruang kunci                 : 2^128")
+    print("  Peluang acak pesan benar    : {:.1%} per percobaan".format(
+        brute_force["chance_by_guessing"]))
+    print("  Kunci wajib dicoba ~2^128 kali sebelum yakin")
+    print()
+
+    print("5. Syarat nonce unik per kunci")
+    print("-" * 68)
+    print("  Mask saling menghilangkan   : {}".format(
+        "ya (c1 XOR c2 == s1 XOR s2)" if nonce["mask_cancels"] else "tidak"))
+    print("  Rasio pasangan konsisten    : {:.6f} (kontrol {:.6f})".format(
+        nonce["observed_ratio"], nonce["control_ratio"]))
+    print()
+
+    print("Catatan: angka di atas adalah pengukuran empiris, bukan bukti")
+    print("keamanan kriptografi formal. Autentikasi dan proteksi kanal")
+    print("samping belum dikerjakan.")
+    print()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Menjalankan eksperimen Adaptive Decoy pada HoneyVault.")
@@ -202,6 +292,9 @@ def main(argv=None):
     parser.add_argument(
         "--dte", action="store_true",
         help="Tambahkan laporan kualitas DTE.")
+    parser.add_argument(
+        "--honey", action="store_true",
+        help="Tambahkan laporan pengukuran keamanan Honey Encryption.")
     args = parser.parse_args(argv)
 
     if args.synthetic:
@@ -248,6 +341,9 @@ def main(argv=None):
 
     if args.dte:
         print_dte_report(rows, count=max(args.count, 300), seed=args.seed or 42)
+
+    if args.honey:
+        print_honey_report(rows, count=max(args.count, 300), seed=args.seed or 42)
 
     if args.show_decoy:
         print_decoy_sample(

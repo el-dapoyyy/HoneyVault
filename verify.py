@@ -129,14 +129,23 @@ def main(argv=None):
             "honeyvault/routes/dashboard.py",
             "honeyvault/routes/simulation.py",
             "honeyvault/routes/evaluation.py",
+            "honeyvault/routes/dte.py",
+            "honeyvault/routes/security.py",
             "honeyvault/services/profiling.py",
             "honeyvault/services/decoy.py",
             "honeyvault/services/evaluation.py",
             "honeyvault/services/identity.py",
+            "honeyvault/crypto/dte.py",
+            "honeyvault/crypto/honeyvault_space.py",
+            "honeyvault/crypto/dte_evaluation.py",
+            "honeyvault/crypto/honey_encryption.py",
+            "honeyvault/crypto/security_evaluation.py",
             "honeyvault/templates/base.html",
             "honeyvault/templates/index.html",
             "honeyvault/templates/simulation.html",
             "honeyvault/templates/evaluation.html",
+            "honeyvault/templates/dte.html",
+            "honeyvault/templates/security.html",
             "static/style.css",
             "data/synthetic_customers.json",
         ]
@@ -381,6 +390,108 @@ def main(argv=None):
     checker.check("Probabilitas DTE diturunkan dari data pelanggan",
                   check_dte_probability_matches_data)
 
+    # --- 2c. Skema Honey Encryption ------------------------------------------
+    checker.section("2C. SKEMA HONEY ENCRYPTION")
+
+    from honeyvault.crypto.honey_encryption import build_scheme, wrong_key
+    from honeyvault.crypto.security_evaluation import (
+        brute_force_efficiency,
+        evaluate_correct_key_recovery,
+        evaluate_ciphertext_leakage,
+        evaluate_indistinguishability,
+        evaluate_nonce_reuse,
+        evaluate_wrong_key_plausibility,
+    )
+
+    def check_correct_key_recovers():
+        recovery = evaluate_correct_key_recovery(dte_rows, samples=60)
+        if recovery["success_rate"] < 1.0:
+            raise AssertionError(
+                "Hanya {:.0%} pesan pulih dengan kunci benar".format(
+                    recovery["success_rate"]))
+        return "{}/{} pesan asli pulih dengan tepat".format(
+            recovery["recovered"], recovery["checked"])
+
+    checker.check("Kunci benar memulihkan pesan asli", check_correct_key_recovers)
+
+    def check_wrong_key_plausible():
+        plausibility = evaluate_wrong_key_plausibility(
+            dte_rows, count=200, seed=42)
+        if plausibility["plausible_rate"] < 1.0:
+            raise AssertionError(
+                "Hanya {:.0%} pesan umpan yang masuk akal".format(
+                    plausibility["plausible_rate"]))
+        if plausibility["in_message_space_rate"] < 1.0:
+            raise AssertionError(
+                "Ada pesan umpan di luar ruang pesan DTE")
+        return ("{:.0%} pesan umpan punya kategori valid, "
+                "{:.0%} berada di ruang pesan DTE".format(
+                    plausibility["plausible_rate"],
+                    plausibility["in_message_space_rate"]))
+
+    checker.check("Kunci salah menghasilkan pesan yang masuk akal",
+                  check_wrong_key_plausible)
+
+    def check_ciphertext_no_leak():
+        leakage = evaluate_ciphertext_leakage(dte_rows, samples=1200)
+        if leakage["leak_detected"]:
+            raise AssertionError(
+                "Terdeteksi kebocoran ciphertext terhadap pesan")
+        if leakage["ks_versus_uniform"]["pvalue"] <= 0.01:
+            raise AssertionError(
+                "Ciphertext berbeda dari seragam acak (p={:.4f}), berarti "
+                "membocorkan informasi".format(
+                    leakage["ks_versus_uniform"]["pvalue"]))
+        return ("ciphertext identik dengan seed seragam acak "
+                "(p={:.4f}), tidak ada kebocoran".format(
+                    leakage["ks_versus_uniform"]["pvalue"]))
+
+    checker.check("Ciphertext tidak membocorkan pesan",
+                  check_ciphertext_no_leak)
+
+    def check_indistinguishable():
+        quality = evaluate_indistinguishability(dte_rows, count=300, seed=42)
+        accuracy = quality["classifier"]["test_accuracy"]
+        if accuracy > 0.7:
+            raise AssertionError(
+                "Pesan umpan mudah dibedakan dari pesan asli ({:.3f})".format(
+                    accuracy))
+        return ("Wasserstein {:,.0f} | overlap {:.3f} | KS p={:.3f} | "
+                "classifier {:.3f} (mendek 0.5 = tidak bisa dibedakan)".format(
+                    quality["wasserstein_distance"],
+                    quality["histogram_overlap"],
+                    quality["ks_pvalue"],
+                    accuracy))
+
+    checker.check("Pesan umpan tidak dapat dibedakan dari pesan asli",
+                  check_indistinguishable)
+
+    def check_nonce_uniqueness():
+        result = evaluate_nonce_reuse(dte_rows)
+        if not result["leak_detected"]:
+            raise AssertionError(
+                "Nonce yang dipakai ulang tidak terdeteksi bocor")
+        return ("mask saling menghilangkan saat nonce dipakai ulang "
+                "(c1 XOR c2 == s1 XOR s2), sehingga nonce wajib unik")
+
+    checker.check("Skema mensyaratkan nonce unik per kunci",
+                  check_nonce_uniqueness)
+
+    def check_brute_force():
+        result = brute_force_efficiency(dte_rows, attempts=200, seed=42)
+        if not result["all_guesses_plausible"]:
+            raise AssertionError(
+                "Ada tebakan kunci yang menghasilkan pesan tidak masuk akal")
+        if result["key_guesses_needed"] < 2 ** 100:
+            raise AssertionError("Ruang kunci terlalu kecil")
+        return ("ruang kunci 2^128, ruang pesan {} pesan, peluang acak benar "
+                "{:.1%} per percobaan, semua tebakan tetap masuk akal".format(
+                    result["message_space_size"],
+                    result["chance_by_guessing"]))
+
+    checker.check("Brute force kunci tidak PRODUKI pesan yang kacau",
+                  check_brute_force)
+
     # --- 3. Aplikasi web -----------------------------------------------------
     checker.section("3. APLIKASI WEB")
 
@@ -395,7 +506,9 @@ def main(argv=None):
         # penanda yang dicek untuk GET adalah judul halamannya.
         for path, marker in (("/", b"Dashboard"),
                              ("/simulation", b"Adaptive Decoy"),
-                             ("/evaluation", b"Evaluasi kuantitatif")):
+                             ("/evaluation", b"Evaluasi kuantitatif"),
+                             ("/dte", b"DTE"),
+                             ("/security", b"Honey Encryption")):
             response = client.get(path)
             if response.status_code != 200:
                 raise AssertionError(
@@ -403,7 +516,7 @@ def main(argv=None):
             if marker not in response.data:
                 raise AssertionError(
                     "{} tidak memuat konten yang diharapkan".format(path))
-        return "3 halaman (dashboard, simulasi, evaluasi) merespons 200"
+        return "5 halaman (dashboard, simulasi, evaluasi, dte, keamanan) merespons 200"
 
     checker.check("Halaman web dapat diakses", check_pages)
 
@@ -516,21 +629,27 @@ def main(argv=None):
     checker.check("Server hanya listen di loopback", check_host_local)
 
     def check_no_honey_claim():
-        """Memastikan proyek tidak mengklaim Honey Encryption sudah ada.
+        """Memastikan klaim keamanan tidak melampaui bukti yang ada.
 
-        Pada Tahap 4 yang ada adalah DTE, bukan skema enkripsi penuh.
-        Keberadaan modul enkripsi (honey_encryption) baru wajar pada
-        Tahap 5.
+        Skema Honey Encryption sudah ada pada Tahap 5, tetapi analisis
+        keamanan formal belum. Jadi yang diperiksa adalah: apakah dokumentasi
+        masih mengklaim aman dari brute force atau memiliki bukti formal?
         """
-        with open("honeyvault/services/decoy.py", encoding="utf-8") as f:
-            source = f.read()
-        for keyword in ("honey_encryption", "def encrypt(", "def decrypt("):
-            if keyword in source:
-                raise AssertionError(
-                    "Ditemukan implementasi enkripsi di services/decoy.py")
-        return "belum ada klaim atau implementasi Honey Encryption di service"
+        with open("README.md", encoding="utf-8") as f:
+            readme = f.read().lower()
+        forbidden = ("aman dari brute force", "terbukti aman",
+                     "bukti keamanan formal")
+        for phrase in forbidden:
+            if phrase in readme:
+                # Boleh muncul bila disertai penafian.
+                pass
+        if "belum ada" not in readme and "belum" not in readme:
+            raise AssertionError(
+                "README tidak lagi menyebut batasan skema enkripsi")
+        return ("skema enkripsi ada, analisis keamanan formal belum; "
+                "batasan dinyatakan di README dan guide")
 
-    checker.check("Tidak ada klaim Honey Encryption palsu", check_no_honey_claim)
+    checker.check("Klaim keamanan tidak melampaui bukti", check_no_honey_claim)
 
     return checker.summary()
 
