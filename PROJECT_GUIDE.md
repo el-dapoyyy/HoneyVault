@@ -65,7 +65,7 @@ diimplementasikan dan diuji.
 | Identitas sintetis | Sudah ada | Nama dan ID decoy tidak pernah menyalin data asli |
 | Evaluasi/perbandingan | Sudah ada | Mean, std. deviasi, histogram, Wasserstein, KS, classifier, waktu |
 | Random seed | Sudah ada | Eksperimen dapat direproduksi |
-| Pengujian otomatis | Sudah ada | 94 test dengan pytest |
+| Pengujian otomatis | Sudah ada | 96 test dengan pytest |
 | DTE | Sudah ada | Round-trip, distribusi terjaga, seed tak sah ditolak |
 | Skema Honey Encryption | Sudah ada | Seed DTE di-mask HMAC; kunci salah -> pesan umpan |
 | Evaluasi keamanan skema | Sudah ada | Pemulihan kunci, plausibilitas, kebocoran, brute force |
@@ -128,8 +128,14 @@ Asumsi keamanan yang dinyatakan:
 
 Pengukuran yang tersedia (`/security`, `verify.py`, `simulate.py --honey`):
 pemulihan kunci benar 100%, 100% pesan umpan berada di ruang pesan DTE,
-akurasi classifier pembeda ≈ 0.51, dan tidak terdeteksi kebocoran ciphertext.
-Angka ini **empiris**, bukan bukti keamanan formal.
+akurasi classifier pembeda di bawah 0,55, dan tidak terdeteksi kebocoran
+ciphertext. Angka ini **empiris**, bukan bukti keamanan formal.
+
+Seluruh pengukuran tersebut **deterministik**: kunci, nonce, dan seed DTE
+diturunkan dari seed eksperimen, sehingga menjalankan perintah yang sama
+menghasilkan angka yang sama persis. Ini dijaga oleh test
+`test_security_evaluation_is_reproducible`. Pada pemakaian nyata, kunci tetap
+harus diacak dan disimpan dengan aman, bukan diturunkan dari seed.
 
 Batasannya: belum ada autentikasi (ciphertext tidak dilindungi MAC), belum
 ada analisis kanal samping, dan belum ada uji keamanan formal. Kanal samping

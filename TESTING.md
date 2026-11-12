@@ -10,7 +10,7 @@ Tiga tingkat pemeriksaan, dari yang paling cepat ke yang paling menyeluruh:
 | Perintah | Waktu | Yang diperiksa |
 | --- | --- | --- |
 | `python verify.py` | ~5 detik | 32 pemeriksaan menyeluruh, keluar dengan kode 0/1 |
-| `python -m pytest tests/ -v` | ~3 detik | 94 test otomatis, perincian tiap test |
+| `python -m pytest tests/ -v` | ~3 detik | 96 test otomatis, perincian tiap test |
 | Cek manual di browser | ~2 menit | Tampilan dan interaksi pengguna |
 
 Ketiganya dipakai bersama. Jangan hanya melakukan yang pertama.
@@ -221,7 +221,7 @@ Jalankan `python app.py`, lalu buka `http://127.0.0.1:5000`.
 
 ```bash
 python verify.py                    # harus: SEMUA PEMERIKSAAN BERHASIL (32/32)
-python -m pytest tests/ -v          # harus: 94 passed
+python -m pytest tests/ -v          # harus: 96 passed
 python app.py                       # cek manual checklist di atas
 python simulate.py --synthetic --count 200 --seed 42   # siapkan angka untuk laporan
 python simulate.py --synthetic --seed 42 --honey      # tabel keamanan skema

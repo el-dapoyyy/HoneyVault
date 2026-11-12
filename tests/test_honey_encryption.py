@@ -206,6 +206,42 @@ def test_different_key_gives_different_ciphertext(rows):
             != scheme_b.encrypt(row, nonce=nonce)["ciphertext"])
 
 
+# -- reproduktivitas ----------------------------------------------------------
+
+def test_security_evaluation_is_reproducible(rows):
+    """Seed sama harus menghasilkan angka pengukuran yang sama persis.
+
+    Tanpa ini, tabel pada laporan tidak bisa diverifikasi ulang karena
+    kunci dan nonce dibangkitkan acak.
+    """
+    from honeyvault.crypto.security_evaluation import (
+        evaluate_ciphertext_leakage,
+        evaluate_indistinguishability,
+        evaluate_wrong_key_plausibility,
+    )
+
+    first = evaluate_wrong_key_plausibility(rows, count=50, seed=7)
+    second = evaluate_wrong_key_plausibility(rows, count=50, seed=7)
+    assert first["decoy_message_frequencies"] == second["decoy_message_frequencies"]
+
+    first = evaluate_indistinguishability(rows, count=50, seed=7)
+    second = evaluate_indistinguishability(rows, count=50, seed=7)
+    assert first["wasserstein_distance"] == second["wasserstein_distance"]
+    assert first["classifier"]["test_accuracy"] == second["classifier"]["test_accuracy"]
+
+    first = evaluate_ciphertext_leakage(rows, samples=200, seed=7)
+    second = evaluate_ciphertext_leakage(rows, samples=200, seed=7)
+    assert first["ks_versus_uniform"]["pvalue"] == second["ks_versus_uniform"]["pvalue"]
+
+
+def test_deterministic_key_is_stable():
+    from honeyvault.crypto.honey_encryption import deterministic_key
+
+    assert deterministic_key(42) == deterministic_key(42)
+    assert deterministic_key(42) != deterministic_key(43)
+    assert len(deterministic_key(42)) == 16
+
+
 # -- validasi kunci ------------------------------------------------------------
 
 def test_short_key_is_rejected(scheme):

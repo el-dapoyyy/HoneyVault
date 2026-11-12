@@ -19,7 +19,11 @@ model keamanan yang dinyatakan, yang di luar cakupan prototipe.
 from collections import Counter
 import random
 
-from honeyvault.crypto.honey_encryption import build_scheme, wrong_key
+from honeyvault.crypto.honey_encryption import (
+    build_scheme,
+    deterministic_key,
+    wrong_key,
+)
 from honeyvault.crypto.honeyvault_space import balance_tier
 from honeyvault.services.evaluation import (
     classifier_accuracy,
@@ -34,24 +38,48 @@ def _messages(rows):
             for row in rows]
 
 
-def evaluate_correct_key_recovery(rows, key=None, samples=100):
+def _scheme_for(rows, seed, key=None, seed_bits=64):
+    """Membangun skema yang deterministik terhadap seed.
+
+    Kunci dan seed DTE diturunkan dari seed eksperimen sehingga seluruh
+    angka pada laporan dapat direproduksi ulang. Pada pemakaian nyata,
+    kunci harus diacak dan disimpan dengan aman.
+    """
+    if key is None:
+        key = deterministic_key(seed)
+    return build_scheme(
+        rows, key=key, seed_bits=seed_bits, rng=random.Random(seed))
+
+
+def _attacker_for(scheme, seed):
+    """Membangun skema penyerang dengan kunci berbeda, deterministik."""
+    return wrong_key(
+        scheme,
+        key=deterministic_key(seed + 1),
+        rng=random.Random(seed + 1),
+    )
+
+
+def evaluate_correct_key_recovery(rows, key=None, samples=100, seed=42):
     """Mengukur seberapa sering kunci benar memulihkan pesan asli.
 
     Args:
         rows: dataset pelanggan.
         key: kunci rahasia opsional.
         samples: jumlah baris yang diuji.
+        seed: seed eksperimen agar hasil dapat direproduksi.
 
     Returns:
         Dict berisi jumlah pulih, tingkat keberhasilan, dan daftar yang gagal.
     """
-    scheme = build_scheme(rows, key=key)
+    scheme = _scheme_for(rows, seed, key)
+    rng = random.Random(seed)
     step = max(1, len(rows) // samples)
 
     recovered = 0
     failures = []
     for row in rows[::step][:samples]:
-        encrypted = scheme.encrypt(row)
+        encrypted = scheme.encrypt(row, nonce=rng.randbytes(16))
         result = scheme.decrypt(encrypted["ciphertext"], encrypted["nonce"])
         expected = (row["category"], balance_tier(float(row["balance"])))
         if result["message"] == expected:
@@ -79,8 +107,8 @@ def evaluate_wrong_key_plausibility(rows, count=200, key=None, seed=42):
     - Berapa persen pesan umpan yang mengikuti model distribusi DTE.
     - Apakah pesan umpan dapat dibedakan dari pesan asli.
     """
-    scheme = build_scheme(rows, key=key)
-    attacker = wrong_key(scheme)
+    scheme = _scheme_for(rows, seed, key)
+    attacker = _attacker_for(scheme, seed)
     rng = random.Random(seed)
 
     real_messages = Counter(_messages(rows))
@@ -88,7 +116,7 @@ def evaluate_wrong_key_plausibility(rows, count=200, key=None, seed=42):
     decoys = []
     for _ in range(count):
         source = rows[rng.randrange(len(rows))]
-        encrypted = scheme.encrypt(source)
+        encrypted = scheme.encrypt(source, nonce=rng.randbytes(16))
         result = attacker.decrypt(encrypted["ciphertext"], encrypted["nonce"])
         decoys.append({
             "category": result["category"],
@@ -130,13 +158,13 @@ def evaluate_indistinguishability(rows, count=300, key=None, seed=42):
     Returns:
         Dict metrik Wasserstein, histogram, KS, dan akurasi classifier.
     """
-    scheme = build_scheme(rows, key=key)
-    attacker = wrong_key(scheme)
+    scheme = _scheme_for(rows, seed, key)
+    attacker = _attacker_for(scheme, seed)
     rng = random.Random(seed)
     decoys = []
     for _ in range(count):
         source = rows[rng.randrange(len(rows))]
-        encrypted = scheme.encrypt(source)
+        encrypted = scheme.encrypt(source, nonce=rng.randbytes(16))
         result = attacker.decrypt(encrypted["ciphertext"], encrypted["nonce"])
         decoys.append({
             "category": result["category"],
@@ -157,26 +185,32 @@ def evaluate_indistinguishability(rows, count=300, key=None, seed=42):
     }
 
 
-def evaluate_ciphertext_leakage(rows, samples=500, key=None):
+def evaluate_ciphertext_leakage(rows, samples=500, key=None, seed=123):
     """Menguji apakah ciphertext membocorkan pesan asli.
 
     Cara pengujiannya: sebaran ciphertext untuk pesan yang berbeda seharusnya
     identik. Diuji dengan statistik Kolmogorov-Smirnov antar kategori pesan.
     Bila ciphertext bocor, p-value antar pasangan kategori akan kecil.
 
+    Args:
+        rows: dataset pelanggan.
+        samples: jumlah ciphertext yang diuji.
+        key: kunci rahasia opsional.
+        seed: seed eksperimen agar hasil dapat direproduksi.
+
     Returns:
         Dict berisi statistik sebaran ciphertext dan hasil uji KS.
     """
     from scipy import stats as scipy_stats
 
-    scheme = build_scheme(rows, key=key)
-    rng = random.Random(123)
+    scheme = _scheme_for(rows, seed, key)
+    rng = random.Random(seed)
 
     ciphertexts = []
     by_category = {}
     for _ in range(samples):
         source = rows[rng.randrange(len(rows))]
-        encrypted = scheme.encrypt(source)
+        encrypted = scheme.encrypt(source, nonce=rng.randbytes(16))
         ciphertexts.append(encrypted["ciphertext"])
         by_category.setdefault(source["category"], []).append(
             encrypted["ciphertext"])
@@ -216,7 +250,7 @@ def evaluate_ciphertext_leakage(rows, samples=500, key=None):
     }
 
 
-def evaluate_nonce_reuse(rows, key=None, seed_bits=16):
+def evaluate_nonce_reuse(rows, key=None, seed_bits=16, seed=17):
     """Menguji dampak penggunaan nonce yang sama dua kali.
 
     Bila nonce dipakai ulang, mask yang sama dipakai untuk dua ciphertext,
@@ -232,12 +266,18 @@ def evaluate_nonce_reuse(rows, key=None, seed_bits=16):
     XOR teramati, dibandingkan dengan XOR kontrol acak. Nilai ini
     menunjukkan seberapa besar penyempitan yang diperoleh penyerang.
 
+    Args:
+        rows: dataset pelanggan.
+        key: kunci rahasia opsional.
+        seed_bits: ukuran ruang seed DTE.
+        seed: seed eksperimen agar hasil dapat direproduksi.
+
     Returns:
         Dict berisi status kebocoran, rasio penyempitan, dan ukuran ruang
         pesan.
     """
-    scheme = build_scheme(rows, key=key, seed_bits=seed_bits)
-    rng = random.Random(17)
+    scheme = _scheme_for(rows, seed, key, seed_bits=seed_bits)
+    rng = random.Random(seed)
 
     def xor_for_pair(row_a, row_b):
         nonce = b"\x07" * 16
@@ -342,19 +382,24 @@ def brute_force_efficiency(rows, attempts=200, key=None, seed=42):
         Dict berisi jumlah percobaan, tingkat kecocokan pesan, perkiraan
         jumlah percobaan, dan apakah semua tebakan terlihat masuk akal.
     """
-    scheme = build_scheme(rows, key=key)
+    scheme = _scheme_for(rows, seed, key)
     rng = random.Random(seed)
     source = rows[rng.randrange(len(rows))]
     expected = (source["category"], balance_tier(float(source["balance"])))
 
-    encrypted = scheme.encrypt(source)
+    encrypted = scheme.encrypt(source, nonce=rng.randbytes(16))
     observed_categories = {row["category"] for row in rows}
     message_count = len(scheme.space)
 
     matches = 0
     always_plausible = True
-    for _ in range(attempts):
-        guess = wrong_key(scheme)
+    for attempt in range(attempts):
+        # Setiap tebakan memakai kunci berbeda, seperti penyerang sungguhan.
+        guess = wrong_key(
+            scheme,
+            key=deterministic_key(seed + attempt + 1),
+            rng=random.Random(seed + attempt + 1),
+        )
         result = guess.decrypt(encrypted["ciphertext"], encrypted["nonce"])
         if result["message"] == expected:
             matches += 1

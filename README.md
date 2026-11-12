@@ -47,6 +47,12 @@ Hentikan server dengan `Ctrl + C`.
 python -m pytest tests/ -v
 ```
 
+## Laporan
+
+Kerangka laporan lengkap (latar belakang, perancangan, cara kerja program,
+cara penggunaan, hasil dan pembahasan, analisis keamanan) ada di
+[`LAPORAN.md`](LAPORAN.md).
+
 ## Memverifikasi bahwa proyek benar-benar bekerja
 
 ```bash

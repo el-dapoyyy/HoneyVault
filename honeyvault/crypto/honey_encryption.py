@@ -64,11 +64,15 @@ class HoneyEncryption:
             untuk membangkitkan nilai saldo dari pesan hasil decode.
         key: kunci rahasia berupa byte. Jika tidak diberi, kunci acak
             dibangkitkan.
+        rng: objek ``random.Random`` opsional untuk membangkitkan seed DTE.
+            Diberikan agar hasil eksperimen dapat direproduksi. Jika
+            ``None``, seed diambil acak pada setiap pemanggilan.
     """
 
-    def __init__(self, space, cell_salaries, key=None):
+    def __init__(self, space, cell_salaries, key=None, rng=None):
         self.space = space
         self.cell_salaries = cell_salaries
+        self.rng = rng
         if key is None:
             key = os.urandom(KEY_SIZE_BITS // 8)
         if not isinstance(key, (bytes, bytearray)):
@@ -114,7 +118,7 @@ class HoneyEncryption:
             nonce = secrets.token_bytes(NONCE_SIZE_BITS // 8)
 
         # 1. Pesan -> seed lewat DTE.
-        seed = encode_profile(self.space, row)
+        seed = encode_profile(self.space, row, rng=self.rng)
 
         # 2. Seed di-mask dengan pseudorandom dari kunci dan nonce.
         mask = self._mask(nonce)
@@ -148,7 +152,7 @@ class HoneyEncryption:
 
         # 3. Seed diterjemahkan kembali melalui DTE.
         profile_row = decode_profile(
-            self.space, self.cell_salaries, recovered_seed)
+            self.space, self.cell_salaries, recovered_seed, rng=self.rng)
 
         return {
             "message": profile_row["message"],
@@ -159,34 +163,57 @@ class HoneyEncryption:
         }
 
 
-def build_scheme(rows, key=None, seed_bits=DTE_SEED_BITS):
+def deterministic_key(seed=0, size=KEY_SIZE_BITS // 8):
+    """Membangkitkan kunci yang turunan deterministik dari sebuah seed.
+
+    Fungsi ini dipakai oleh modul evaluasi supaya seluruh angka pada
+    laporan dapat direproduksi. Pada pemakaian nyata, kunci harus diacak
+    dan disimpan dengan aman, bukan diturunkan dari seed publik.
+
+    Args:
+        seed: nilai seed.
+        size: panjang kunci dalam byte.
+
+    Returns:
+        Kunci berupa byte.
+    """
+    material = "honeyvault-key-{}".format(seed).encode("utf-8")
+    return hashlib.sha256(material).digest()[:size]
+
+
+def build_scheme(rows, key=None, seed_bits=DTE_SEED_BITS, rng=None):
     """Membangun skema Honey Encryption dari dataset pelanggan.
 
     Args:
         rows: dataset pelanggan.
         key: kunci rahasia opsional.
         seed_bits: ukuran ruang seed DTE.
+        rng: objek ``random.Random`` opsional agar seed DTE dapat
+            direproduksi.
 
     Returns:
         Objek :class:`HoneyEncryption`.
     """
     space, cell_salaries = build_message_space(rows, seed_bits=seed_bits)
-    return HoneyEncryption(space, cell_salaries, key=key)
+    return HoneyEncryption(space, cell_salaries, key=key, rng=rng)
 
 
-def wrong_key(scheme, key=None):
+def wrong_key(scheme, key=None, rng=None):
     """Membuat skema dengan kunci berbeda, untuk simulasi kunci salah.
 
     Args:
         scheme: skema acuan.
         key: kunci baru. Jika ``None``, kunci acak dibangkitkan.
+        rng: objek ``random.Random`` opsional agar seed DTE dapat
+            direproduksi.
 
     Returns:
         Objek :class:`HoneyEncryption` dengan kunci berbeda.
     """
     if key is None:
         key = os.urandom(KEY_SIZE_BITS // 8)
-    return HoneyEncryption(scheme.space, scheme.cell_salaries, key=key)
+    return HoneyEncryption(
+        scheme.space, scheme.cell_salaries, key=key, rng=rng)
 
 
 def generate_decoy_dataset(rows, count, scheme, seed=42):
